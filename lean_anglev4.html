@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>모터사이클 Lean HUD</title>
+  <style>
+    body {
+      background: black;
+      margin: 0;
+      overflow: hidden;
+      font-family: sans-serif;
+    }
+    canvas {
+      display: block;
+    }
+    #hud {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      color: #0f0;
+      font-size: 1rem;
+      background: rgba(0,0,0,0.5);
+      padding: 10px;
+      border-radius: 6px;
+    }
+    #resetBtn, #reinitBtn {
+      position: absolute;
+      top: 10px;
+      padding: 10px 15px;
+      font-size: 1rem;
+      background: #0f0;
+      color: black;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    #resetBtn {
+      right: 10px;
+    }
+    #reinitBtn {
+      right: 140px;
+    }
+    #logList {
+      position: absolute;
+      bottom: 10px;
+      left: 10px;
+      right: 10px;
+      max-height: 40%;
+      overflow-y: auto;
+      background: rgba(255, 255, 255, 0.05);
+      color: #0f0;
+      font-size: 0.9rem;
+      padding: 10px;
+      border-radius: 8px;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="hudCanvas"></canvas>
+  <div id="hud">
+    최대 좌측 기울기: <span id="maxLeft">0.0</span>&deg;<br>
+    최대 우측 기울기: <span id="maxRight">0.0</span>&deg;
+  </div>
+  <button id="reinitBtn" onclick="reinitSensor()">센서 초기화</button>
+  <button id="resetBtn" onclick="resetMax()">최대값 초기화</button>
+  <div id="logList"></div>
+
+  <script>
+    const canvas = document.getElementById('hudCanvas');
+    const ctx = canvas.getContext('2d');
+    let maxLeftLean = 0;
+    let maxRightLean = 0;
+
+    function resizeCanvas() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    function drawHUD(angle) {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      const centerX = canvas.width / 2;
+      const centerY = canvas.height / 2;
+
+      ctx.strokeStyle = '#0f0';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(centerX - 100, centerY);
+      ctx.lineTo(centerX + 100, centerY);
+      ctx.stroke();
+
+      ctx.save();
+      ctx.translate(centerX, centerY);
+      ctx.rotate(-angle * Math.PI / 180);
+      ctx.strokeStyle = '#0ff';
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.moveTo(-150, 0);
+      ctx.lineTo(150, 0);
+      ctx.stroke();
+      ctx.restore();
+
+      ctx.fillStyle = '#f00';
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, 6, 0, 2 * Math.PI);
+      ctx.fill();
+    }
+
+    function appendLog(direction, angle) {
+      const logList = document.getElementById('logList');
+      const time = new Date().toLocaleTimeString();
+      const div = document.createElement('div');
+      div.textContent = `[${time}] ${direction} 기울기 기록 갱신: ${angle.toFixed(1)}°`;
+      logList.prepend(div);
+    }
+
+    function handleOrientation(event) {
+      const gamma = event.gamma || 0;
+      const lean = parseFloat(gamma.toFixed(1));
+
+      if (lean < 0 && Math.abs(lean) > maxLeftLean) {
+        maxLeftLean = Math.abs(lean);
+        document.getElementById('maxLeft').textContent = maxLeftLean.toFixed(1);
+        localStorage.setItem('maxLeftLean', maxLeftLean);
+        appendLog('좌측', maxLeftLean);
+      }
+
+      if (lean > 0 && lean > maxRightLean) {
+        maxRightLean = lean;
+        document.getElementById('maxRight').textContent = maxRightLean.toFixed(1);
+        localStorage.setItem('maxRightLean', maxRightLean);
+        appendLog('우측', maxRightLean);
+      }
+
+      drawHUD(lean);
+    }
+
+    function resetMax() {
+      maxLeftLean = 0;
+      maxRightLean = 0;
+      document.getElementById('maxLeft').textContent = '0.0';
+      document.getElementById('maxRight').textContent = '0.0';
+      localStorage.removeItem('maxLeftLean');
+      localStorage.removeItem('maxRightLean');
+      document.getElementById('logList').innerHTML = '';
+    }
+
+    function reinitSensor() {
+      window.removeEventListener('deviceorientation', handleOrientation);
+      initSensor();
+    }
+
+    function initSensor() {
+      const storedLeft = localStorage.getItem('maxLeftLean');
+      const storedRight = localStorage.getItem('maxRightLean');
+
+      if (storedLeft) {
+        maxLeftLean = parseFloat(storedLeft);
+        document.getElementById('maxLeft').textContent = maxLeftLean.toFixed(1);
+      }
+      if (storedRight) {
+        maxRightLean = parseFloat(storedRight);
+        document.getElementById('maxRight').textContent = maxRightLean.toFixed(1);
+      }
+
+      if (typeof DeviceOrientationEvent.requestPermission === 'function') {
+        DeviceOrientationEvent.requestPermission().then(response => {
+          if (response === 'granted') {
+            window.addEventListener('deviceorientation', handleOrientation);
+          } else {
+            alert('센서 권한이 거부되었습니다.');
+          }
+        });
+      } else {
+        window.addEventListener('deviceorientation', handleOrientation);
+      }
+    }
+
+    window.onload = initSensor;
+  </script>
+</body>
+</html>
