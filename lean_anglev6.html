@@ -63,18 +63,13 @@
         top: auto;
         bottom: 10px;
         left: 50%;
-        transform: translateX(-50%);
         font-size: 0.9rem;
       }
       #resetBtn {
-        top: auto;
-        bottom: 60px;
-        right: 10px;
+        top: 10px; 
       }
       #reinitBtn {
-        top: auto;
-        bottom: 60px;
-        right: 140px;
+        top: 10px;
       }
       #logList {
         bottom: 120px;
@@ -84,6 +79,10 @@
   </style>
 </head>
 <body>
+  <div>
+    <button id="reinitBtn" onclick="reinitSensor()">센서 초기화</button>
+  <button id="resetBtn" onclick="resetMax()">최대값 초기화</button>
+  </div>
   <canvas id="hudCanvas"></canvas>
   <div id="hud">
     <div>SPD: <span id="spd">0</span> km/h</div>
@@ -93,8 +92,7 @@
     <div>최대 좌측 기울기: <span id="maxLeft">0.0</span>&deg;</div>
     <div>최대 우측 기울기: <span id="maxRight">0.0</span>&deg;</div>
   </div>
-  <button id="reinitBtn" onclick="reinitSensor()">센서 초기화</button>
-  <button id="resetBtn" onclick="resetMax()">최대값 초기화</button>
+  
   <div id="logList"></div>
 
   <script>
