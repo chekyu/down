@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>모터사이클 Lean HUD</title>
+  <style>
+    body {
+      background: black;
+      margin: 0;
+      overflow: hidden;
+      font-family: sans-serif;
+    }
+    canvas {
+      display: block;
+    }
+    #hud {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      color: #0f0;
+      font-size: 1rem;
+      background: rgba(0,0,0,0.5);
+      padding: 10px;
+      border-radius: 6px;
+    }
+    #resetBtn {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      padding: 10px 15px;
+      font-size: 1rem;
+      background: #0f0;
+      color: black;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="hudCanvas"></canvas>
+  <div id="hud">
+    최대 기울기: <span id="max">0.0</span>&deg;
+  </div>
+  <button id="resetBtn" onclick="resetMax()">최대값 초기화</button>
+
+  <script>
+    const canvas = document.getElementById('hudCanvas');
+    const ctx = canvas.getContext('2d');
+    let maxLean = 0;
+
+    function resizeCanvas() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    function drawHUD(angle) {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      const centerX = canvas.width / 2;
+      const centerY = canvas.height / 2;
+
+      // 기준선
+      ctx.strokeStyle = '#0f0';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(centerX - 100, centerY);
+      ctx.lineTo(centerX + 100, centerY);
+      ctx.stroke();
+
+      // 수평선 (기울기 반영)
+      ctx.save();
+      ctx.translate(centerX, centerY);
+      ctx.rotate(-angle * Math.PI / 180);
+      ctx.strokeStyle = '#0ff';
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.moveTo(-150, 0);
+      ctx.lineTo(150, 0);
+      ctx.stroke();
+      ctx.restore();
+
+      // 중앙 마커
+      ctx.fillStyle = '#f00';
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, 6, 0, 2 * Math.PI);
+      ctx.fill();
+    }
+
+    function handleOrientation(event) {
+      const gamma = event.gamma || 0;
+      const lean = parseFloat(gamma.toFixed(1));
+      const absLean = Math.abs(lean);
+
+      if (absLean > maxLean) {
+        maxLean = absLean;
+        document.getElementById('max').textContent = maxLean.toFixed(1);
+        localStorage.setItem('maxLean', maxLean);
+      }
+
+      drawHUD(lean);
+    }
+
+    function resetMax() {
+      maxLean = 0;
+      document.getElementById('max').textContent = '0.0';
+      localStorage.removeItem('maxLean');
+    }
+
+    function initSensor() {
+      const stored = localStorage.getItem('maxLean');
+      if (stored) {
+        maxLean = parseFloat(stored);
+        document.getElementById('max').textContent = maxLean.toFixed(1);
+      }
+
+      if (typeof DeviceOrientationEvent.requestPermission === 'function') {
+        DeviceOrientationEvent.requestPermission().then(response => {
+          if (response === 'granted') {
+            window.addEventListener('deviceorientation', handleOrientation);
+          } else {
+            alert('센서 권한이 거부되었습니다.');
+          }
+        });
+      } else {
+        window.addEventListener('deviceorientation', handleOrientation);
+      }
+    }
+
+    window.onload = initSensor;
+  </script>
+</body>
+</html>
