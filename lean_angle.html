@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>모터사이클 기울기 측정기</title>
+  <style>
+    body {
+      background: #111;
+      color: #fff;
+      font-family: sans-serif;
+      text-align: center;
+      padding-top: 50px;
+    }
+
+    h1 {
+      color: #00ffcc;
+    }
+
+    .angle {
+      font-size: 2rem;
+      margin: 20px 0;
+    }
+
+    .max-angle {
+      font-size: 1.5rem;
+      color: #ffa500;
+    }
+
+    button {
+      padding: 10px 20px;
+      background: #00ffcc;
+      color: #000;
+      font-weight: bold;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      margin-top: 20px;
+    }
+
+    button:hover {
+      background: #00ccaa;
+    }
+  </style>
+</head>
+<body>
+  <h1>🏍️ Lean Angle Tracker</h1>
+
+  <div class="angle" id="current">현재 기울기: 0.0°</div>
+  <div class="max-angle" id="max">최대 기울기: 0.0°</div>
+
+  <button onclick="resetMax()">최대값 초기화</button>
+
+  <script>
+    let maxLean = 0;
+
+    function handleOrientation(event) {
+      const gamma = event.gamma || 0; // 좌우 기울기 (-90~90)
+      const lean = gamma.toFixed(1);
+
+      // 절댓값으로 최대 기울기 판단
+      const absLean = Math.abs(gamma);
+      if (absLean > maxLean) {
+        maxLean = absLean;
+      }
+
+      document.getElementById('current').textContent = `현재 기울기: ${lean}°`;
+      document.getElementById('max').textContent = `최대 기울기: ${maxLean.toFixed(1)}°`;
+    }
+
+    function initSensor() {
+      if (typeof DeviceOrientationEvent.requestPermission === 'function') {
+        // iOS 센서 권한 요청
+        DeviceOrientationEvent.requestPermission()
+          .then(response => {
+            if (response === 'granted') {
+              window.addEventListener('deviceorientation', handleOrientation);
+            } else {
+              alert('센서 권한이 거부되었습니다.');
+            }
+          })
+          .catch(console.error);
+      } else {
+        // Android 등
+        window.addEventListener('deviceorientation', handleOrientation);
+      }
+    }
+
+    function resetMax() {
+      maxLean = 0;
+      document.getElementById('max').textContent = `최대 기울기: 0.0°`;
+    }
+
+    window.onload = initSensor;
+  </script>
+</body>
+</html>
