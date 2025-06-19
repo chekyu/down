@@ -273,6 +273,12 @@
     }
 
     if (typeof DeviceOrientationEvent !== "undefined" && typeof DeviceOrientationEvent.requestPermission === "function") {
+      DeviceOrientationEvent.requestPermission().then(resp => {
+          if (resp === "granted") {
+            window.addEventListener("deviceorientation", update);
+            btn.remove();
+          }
+        });
       const btn = document.createElement("button");
       btn.innerText = "센서 허용";
       btn.style.position = "absolute";
