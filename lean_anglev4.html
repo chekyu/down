@@ -168,6 +168,15 @@
             backCtx.arc(0, 0, 150, 0, 2 * Math.PI);
             backCtx.stroke();
 
+            // 위치 중앙
+            backCtx.strokeStyle = '#0ff';
+            backCtx.lineWidth = 1
+            backCtx.beginPath();
+            backCtx.moveTo(-100, 0);
+            backCtx.lineTo(100, 0);
+            backCtx.stroke();
+
+
             // 눈금 그리기 (-90 ~ 90도)
             for (let deg = -90; deg <= 90; deg++) {
                 const rad = (deg) * Math.PI / 180;
