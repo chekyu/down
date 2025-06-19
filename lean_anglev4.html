@@ -208,43 +208,35 @@
             ctx.save();
             ctx.translate(w / 2, h / 2);
 
-            ctx.beginPath();
-            ctx.strokeStyle = '#0ff';
-            ctx.lineWidth = 3;
-            ctx.arc(0, 0, 120, -Math.PI / 2 - roll * Math.PI / 180, -Math.PI / 2);
-            ctx.stroke();
+            // ctx.beginPath();
+            // ctx.strokeStyle = '#0ff';
+            // ctx.lineWidth = 3;
+            // ctx.arc(0, 0, 120, -Math.PI / 2 - roll * Math.PI / 180, -Math.PI / 2);
+            // ctx.stroke();
 
-            // ctx.strokeStyle = '#0f0';
-            // for (let i = -90; i <= 90; i += 10) {
-            //     const y = (pitch - i) * 2;
-            //     ctx.beginPath();
-            //     ctx.moveTo(-40, y);
-            //     ctx.lineTo(40, y);
-            //     ctx.stroke();
-            // }
+            ctx.rotate((roll + 90) * Math.PI / 180); // lean 값만큼 회전
+            ctx.strokeStyle = '#ffff00'; // 노란색 바늘
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(0, 0); // 기준점에서 시작
+            ctx.lineTo(0, 90 + 40); // 위쪽으로 길게 뻗는 바늘
+            ctx.stroke();
+            
+            ctx.strokeStyle = '#0f0';
+            for (let i = -50; i <= 50; i += 10) {
+                const y = (pitch - i) * 2;
+                ctx.beginPath();
+                ctx.moveTo(-40, y);
+                ctx.lineTo(40, y);
+                ctx.stroke();
+            }
 
             // 위치 중앙
             ctx.strokeStyle = '#f00';
             ctx.beginPath();
             ctx.moveTo(-15, 0);
             ctx.lineTo(15, 0);
-            ctx.moveTo(0, -15);
-            ctx.lineTo(0, 15);
             ctx.stroke();
-
-            // ctx.rotate(-yaw * Math.PI / 180);
-            // ctx.strokeStyle = '#ff0';
-            // ctx.beginPath();
-            // ctx.arc(0, 0, 150, 0, 2 * Math.PI);
-            // ctx.stroke();
-            // ['N', 'E', 'S', 'W'].forEach((dir, i) => {
-            //     const angle = i * Math.PI / 2;
-            //     const x = Math.cos(angle) * 150;
-            //     const y = Math.sin(angle) * 150;
-            //     ctx.fillStyle = '#ff0';
-            //     ctx.font = '20px monospace';
-            //     ctx.fillText(dir, x - 10, y + 5);
-            // });
 
             ctx.restore();
         }
