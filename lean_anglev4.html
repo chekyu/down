@@ -172,7 +172,8 @@
             backCtx.strokeStyle = '#fff';
             backCtx.lineWidth = 5
             backCtx.beginPath();
-            backCtx.arc(0, 0, 150, 0, 2 * Math.PI);
+            // backCtx.arc(0, 0, 150, 0, 2 * Math.PI);
+            backCtx.arc(0, 0, radius, Math.PI, 0, false); // 180도
             backCtx.stroke();
 
             // 위치 중앙
