@@ -223,14 +223,8 @@
             // ctx.arc(0, 0, 120, -Math.PI / 2 - roll * Math.PI / 180, -Math.PI / 2);
             // ctx.stroke();
 
-            ctx.rotate((roll + 180) * Math.PI / 180); // lean 값만큼 회전
-            ctx.strokeStyle = '#ffff00'; // 노란색 바늘
-            ctx.lineWidth = 2;
-            ctx.beginPath();
-            ctx.moveTo(0, 0); // 기준점에서 시작
-            ctx.lineTo(0, 90 + 40); // 위쪽으로 길게 뻗는 바늘
-            ctx.stroke();
-            
+            // 눈금선 (Pitch 기준, 회전 없음)
+            ctx.save();
             ctx.strokeStyle = '#0f0';
             ctx.lineWidth = 1;
             for (let i = -50; i <= 50; i += 10) {
@@ -240,14 +234,26 @@
                 ctx.lineTo(50, y);
                 ctx.stroke();
             }
+            ctx.restore(); // 회전 적용 안 함
 
-            // 위치 중앙
+            // 중앙 위치 표시 (회전 없음)
+            ctx.save();
             ctx.strokeStyle = '#f00';
             ctx.beginPath();
-            ctx.moveTo(-15, 0);
-            ctx.lineTo(15, 0);
+            ctx.moveTo(-10, 0);
+            ctx.lineTo(5, 0);
             ctx.stroke();
+            ctx.restore();
 
+            // 회전하는 바늘만 따로 회전
+            ctx.save();
+            ctx.rotate((roll + 180) * Math.PI / 180); // 바늘만 회전
+            ctx.strokeStyle = '#ffff00';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(0, 0);
+            ctx.lineTo(0, 130);
+            ctx.stroke();
             ctx.restore();
         }
 
