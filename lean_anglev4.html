@@ -225,20 +225,21 @@
 
             ctx.rotate(roll * Math.PI / 180); // lean 값만큼 회전
             ctx.strokeStyle = '#ffff00'; // 노란색 바늘
-            ctx.lineWidth = 3;
+            ctx.lineWidth = 2;
             ctx.beginPath();
             ctx.moveTo(0, 0); // 기준점에서 시작
             ctx.lineTo(0, 90 + 40); // 위쪽으로 길게 뻗는 바늘
             ctx.stroke();
             
-            // ctx.strokeStyle = '#0f0';
-            // for (let i = -50; i <= 50; i += 10) {
-            //     const y = (pitch - i) * 2;
-            //     ctx.beginPath();
-            //     ctx.moveTo(-40, y);
-            //     ctx.lineTo(40, y);
-            //     ctx.stroke();
-            // }
+            ctx.strokeStyle = '#0f0';
+            ctx.lineWidth = 1;
+            for (let i = -50; i <= 50; i += 10) {
+                const y = (pitch - i) * 1;
+                ctx.beginPath();
+                ctx.moveTo(-50, y);
+                ctx.lineTo(50, y);
+                ctx.stroke();
+            }
 
             // 위치 중앙
             ctx.strokeStyle = '#f00';
