@@ -3,92 +3,247 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>모터사이클 기울기 측정기</title>
+  <title>모터사이클 Lean HUD</title>
   <style>
     body {
-      background: #111;
-      color: #fff;
-      font-family: sans-serif;
-      text-align: center;
-      padding-top: 50px;
+      background: black;
+      margin: 0;
+      overflow: hidden;
+      font-family: 'Courier New', monospace;
     }
-
-    h1 {
-      color: #00ffcc;
+    canvas {
+      display: block;
     }
-
-    .angle {
-      font-size: 2rem;
-      margin: 20px 0;
+    #hud {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      color: #00ff00;
+      font-size: 1rem;
+      background: rgba(0,0,0,0.3);
+      padding: 10px;
+      border-radius: 6px;
+      z-index: 2;
     }
-
-    .max-angle {
-      font-size: 1.5rem;
-      color: #ffa500;
-    }
-
-    button {
-      padding: 10px 20px;
-      background: #00ffcc;
-      color: #000;
-      font-weight: bold;
+    #resetBtn, #reinitBtn {
+      position: absolute;
+      top: 10px;
+      padding: 10px 15px;
+      font-size: 1rem;
+      background: #00ff00;
+      color: black;
       border: none;
-      border-radius: 8px;
+      border-radius: 5px;
       cursor: pointer;
-      margin-top: 20px;
+      z-index: 2;
     }
-
-    button:hover {
-      background: #00ccaa;
+    #resetBtn {
+      right: 10px;
+    }
+    #reinitBtn {
+      right: 140px;
+    }
+    #logList {
+      position: absolute;
+      bottom: 10px;
+      left: 10px;
+      right: 10px;
+      max-height: 40%;
+      overflow-y: auto;
+      background: rgba(0, 255, 0, 0.05);
+      color: #00ff00;
+      font-size: 0.9rem;
+      padding: 10px;
+      border-radius: 8px;
+      z-index: 2;
+    }
+    @media (orientation: portrait) {
+      #hud {
+        top: auto;
+        bottom: 10px;
+        left: 50%;
+        transform: translateX(-50%);
+        font-size: 0.9rem;
+      }
+      #resetBtn {
+        top: auto;
+        bottom: 60px;
+        right: 10px;
+      }
+      #reinitBtn {
+        top: auto;
+        bottom: 60px;
+        right: 140px;
+      }
+      #logList {
+        bottom: 120px;
+        font-size: 0.8rem;
+      }
     }
   </style>
 </head>
 <body>
-  <h1>🏍️ Lean Angle Tracker</h1>
-
-  <div class="angle" id="current">현재 기울기: 0.0°</div>
-  <div class="max-angle" id="max">최대 기울기: 0.0°</div>
-
-  <button onclick="resetMax()">최대값 초기화</button>
+  <canvas id="hudCanvas"></canvas>
+  <div id="hud">
+    <div>SPD: <span id="spd">0</span> km/h</div>
+    <div>ALT: <span id="alt">0</span> m</div>
+    <div>현재 좌우 기울기: <span id="currentLean">0.0</span>&deg;</div>
+    <div>기울기 유지 시간: <span id="duration">0.0</span>초</div>
+    <div>최대 좌측 기울기: <span id="maxLeft">0.0</span>&deg;</div>
+    <div>최대 우측 기울기: <span id="maxRight">0.0</span>&deg;</div>
+  </div>
+  <button id="reinitBtn" onclick="reinitSensor()">센서 초기화</button>
+  <button id="resetBtn" onclick="resetMax()">최대값 초기화</button>
+  <div id="logList"></div>
 
   <script>
-    let maxLean = 0;
+    const canvas = document.getElementById('hudCanvas');
+    const ctx = canvas.getContext('2d');
+    let maxLeftLean = 0;
+    let maxRightLean = 0;
+    let leanStartTime = null;
+    let currentOffset = 0;
 
-    function handleOrientation(event) {
-      const gamma = event.gamma || 0; // 좌우 기울기 (-90~90)
-      const lean = gamma.toFixed(1);
+    function resizeCanvas() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resizeCanvas);
+    window.addEventListener('orientationchange', resizeCanvas);
+    resizeCanvas();
 
-      // 절댓값으로 최대 기울기 판단
-      const absLean = Math.abs(gamma);
-      if (absLean > maxLean) {
-        maxLean = absLean;
+    function drawHUD(angle) {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      const centerX = canvas.width / 2;
+      const centerY = canvas.height / 2;
+
+      ctx.save();
+      ctx.translate(centerX, centerY);
+      ctx.rotate(-angle * Math.PI / 180);
+      ctx.strokeStyle = Math.abs(angle) > 30 ? '#ff0000' : '#00ff00';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(-150, 0);
+      ctx.lineTo(150, 0);
+      ctx.stroke();
+
+      for (let i = -30; i <= 30; i += 10) {
+        const y = i * 2;
+        ctx.beginPath();
+        ctx.moveTo(-10, y);
+        ctx.lineTo(10, y);
+        ctx.stroke();
+        ctx.fillStyle = '#00ff00';
+        ctx.fillText(i.toString(), 15, y + 4);
       }
+      ctx.restore();
 
-      document.getElementById('current').textContent = `현재 기울기: ${lean}°`;
-      document.getElementById('max').textContent = `최대 기울기: ${maxLean.toFixed(1)}°`;
+      ctx.fillStyle = '#00ff00';
+      ctx.beginPath();
+      ctx.moveTo(centerX, centerY + 10);
+      ctx.lineTo(centerX - 8, centerY + 25);
+      ctx.lineTo(centerX + 8, centerY + 25);
+      ctx.closePath();
+      ctx.fill();
     }
 
-    function initSensor() {
-      if (typeof DeviceOrientationEvent.requestPermission === 'function') {
-        // iOS 센서 권한 요청
-        DeviceOrientationEvent.requestPermission()
-          .then(response => {
-            if (response === 'granted') {
-              window.addEventListener('deviceorientation', handleOrientation);
-            } else {
-              alert('센서 권한이 거부되었습니다.');
-            }
-          })
-          .catch(console.error);
+    function appendLog(direction, angle) {
+      const logList = document.getElementById('logList');
+      const time = new Date().toLocaleTimeString();
+      const div = document.createElement('div');
+      div.textContent = `[${time}] ${direction} 기울기 기록 갱신: ${angle.toFixed(1)}°`;
+      logList.prepend(div);
+    }
+
+    function handleOrientation(event) {
+      const rawGamma = event.gamma || 0;
+      const gamma = rawGamma - currentOffset;
+      const lean = parseFloat(gamma.toFixed(1));
+      document.getElementById('currentLean').textContent = lean.toFixed(1);
+
+      const now = Date.now();
+      if (Math.abs(lean) > 5) {
+        if (!leanStartTime) leanStartTime = now;
+        const duration = ((now - leanStartTime) / 1000).toFixed(1);
+        document.getElementById('duration').textContent = duration;
       } else {
-        // Android 등
-        window.addEventListener('deviceorientation', handleOrientation);
+        leanStartTime = null;
+        document.getElementById('duration').textContent = '0.0';
       }
+
+      if (lean < 0 && Math.abs(lean) > maxLeftLean) {
+        maxLeftLean = Math.abs(lean);
+        document.getElementById('maxLeft').textContent = maxLeftLean.toFixed(1);
+        localStorage.setItem('maxLeftLean', maxLeftLean);
+        appendLog('좌측', maxLeftLean);
+      }
+      if (lean > 0 && lean > maxRightLean) {
+        maxRightLean = lean;
+        document.getElementById('maxRight').textContent = maxRightLean.toFixed(1);
+        localStorage.setItem('maxRightLean', maxRightLean);
+        appendLog('우측', maxRightLean);
+      }
+      drawHUD(lean);
     }
 
     function resetMax() {
-      maxLean = 0;
-      document.getElementById('max').textContent = `최대 기울기: 0.0°`;
+      maxLeftLean = 0;
+      maxRightLean = 0;
+      leanStartTime = null;
+      currentOffset = 0;
+      document.getElementById('maxLeft').textContent = '0.0';
+      document.getElementById('maxRight').textContent = '0.0';
+      document.getElementById('currentLean').textContent = '0.0';
+      document.getElementById('duration').textContent = '0.0';
+      localStorage.removeItem('maxLeftLean');
+      localStorage.removeItem('maxRightLean');
+      document.getElementById('logList').innerHTML = '';
+    }
+
+    function reinitSensor() {
+      window.removeEventListener('deviceorientation', handleOrientation);
+
+      const captureOffset = (event) => {
+        currentOffset = event.gamma || 0;
+        window.removeEventListener('deviceorientation', captureOffset);
+        window.addEventListener('deviceorientation', handleOrientation);
+      };
+
+      window.addEventListener('deviceorientation', captureOffset);
+    }
+
+    function updateGPS(position) {
+      const spd = (position.coords.speed || 0) * 3.6;
+      const alt = position.coords.altitude || 0;
+      document.getElementById('spd').textContent = spd.toFixed(0);
+      document.getElementById('alt').textContent = alt.toFixed(0);
+    }
+
+    function initSensor() {
+      const storedLeft = localStorage.getItem('maxLeftLean');
+      const storedRight = localStorage.getItem('maxRightLean');
+      if (storedLeft) {
+        maxLeftLean = parseFloat(storedLeft);
+        document.getElementById('maxLeft').textContent = maxLeftLean.toFixed(1);
+      }
+      if (storedRight) {
+        maxRightLean = parseFloat(storedRight);
+        document.getElementById('maxRight').textContent = maxRightLean.toFixed(1);
+      }
+      if (navigator.geolocation) {
+        navigator.geolocation.watchPosition(updateGPS, null, { enableHighAccuracy: true });
+      }
+      if (typeof DeviceOrientationEvent.requestPermission === 'function') {
+        DeviceOrientationEvent.requestPermission().then(response => {
+          if (response === 'granted') {
+            window.addEventListener('deviceorientation', handleOrientation);
+          } else {
+            alert('센서 권한이 거부되었습니다.');
+          }
+        });
+      } else {
+        window.addEventListener('deviceorientation', handleOrientation);
+      }
     }
 
     window.onload = initSensor;
