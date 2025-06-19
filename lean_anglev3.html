@@ -273,18 +273,13 @@
     }
 
     if (typeof DeviceOrientationEvent !== "undefined" && typeof DeviceOrientationEvent.requestPermission === "function") {
-      DeviceOrientationEvent.requestPermission().then(resp => {
-          if (resp === "granted") {
-            window.addEventListener("deviceorientation", update);
-            btn.remove();
-          }
-        });
       const btn = document.createElement("button");
       btn.innerText = "센서 허용";
       btn.style.position = "absolute";
       btn.style.top = "50%";
       btn.style.left = "50%";
       btn.style.transform = "translate(-50%, -50%)";
+      btn.style.z-index = "999";
       btn.onclick = () => {
         DeviceOrientationEvent.requestPermission().then(resp => {
           if (resp === "granted") {
