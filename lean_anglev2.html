@@ -3,6 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <title>HUD 자세 시각화</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0a0f1a">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="icon-192.png">
   <style>
     html, body {
       margin: 0;
@@ -83,10 +87,14 @@
     let yawOffset = 0, pitchOffset = 0, rollOffset = 0;
     let lastYaw = 0, lastPitch = 0, lastRoll = 0;
 
+    // 보정 필터 변수
+    let filteredYaw = 0, filteredPitch = 0, filteredRoll = 0;
+    const alpha = 0.1; // 보정 필터 계수
+
     function resetReference() {
-      yawOffset = lastYaw;
-      pitchOffset = lastPitch;
-      rollOffset = lastRoll;
+      yawOffset = filteredYaw;
+      pitchOffset = filteredPitch;
+      rollOffset = filteredRoll;
     }
 
     function getDirectionText(yaw) {
@@ -114,7 +122,6 @@
       hudCtx.lineTo(100, pitchY);
       hudCtx.stroke();
 
-      // 제한선
       hudCtx.setLineDash([6, 4]);
       hudCtx.strokeStyle = "#ff4444";
       [-100, 100].forEach(x => {
@@ -125,7 +132,6 @@
       });
       hudCtx.setLineDash([]);
 
-      // 중앙 항공기 아이콘 (단순형)
       hudCtx.beginPath();
       hudCtx.moveTo(0, -20);
       hudCtx.lineTo(0, 20);
@@ -153,17 +159,22 @@
     }
 
     function updateOrientation(e) {
-      const yaw = (e.alpha ?? 0);
-      const pitch = (e.beta ?? 0);
-      const roll = (e.gamma ?? 0);
+      const rawYaw = (e.alpha ?? 0);
+      const rawPitch = (e.beta ?? 0);
+      const rawRoll = (e.gamma ?? 0);
 
-      lastYaw = yaw;
-      lastPitch = pitch;
-      lastRoll = roll;
+      // 보정 필터 적용 (지수평활)
+      filteredYaw = alpha * rawYaw + (1 - alpha) * filteredYaw;
+      filteredPitch = alpha * rawPitch + (1 - alpha) * filteredPitch;
+      filteredRoll = alpha * rawRoll + (1 - alpha) * filteredRoll;
 
-      const relYaw = ((yaw - yawOffset + 360) % 360).toFixed(1);
-      const relPitch = (pitch - pitchOffset).toFixed(1);
-      const relRoll = (roll - rollOffset).toFixed(1);
+      lastYaw = rawYaw;
+      lastPitch = rawPitch;
+      lastRoll = rawRoll;
+
+      const relYaw = ((filteredYaw - yawOffset + 360) % 360).toFixed(1);
+      const relPitch = (filteredPitch - pitchOffset).toFixed(1);
+      const relRoll = (filteredRoll - rollOffset).toFixed(1);
 
       document.getElementById("yaw").textContent = relYaw;
       document.getElementById("pitch").textContent = relPitch;
