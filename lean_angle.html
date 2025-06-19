@@ -102,7 +102,7 @@
     let maxLeftLean = 0;
     let maxRightLean = 0;
     let leanStartTime = null;
-    let currentOffset = 0;
+    let offset = { alpha: 0, beta: 0, gamma: 0 };
 
     function resizeCanvas() {
       canvas.width = window.innerWidth;
@@ -156,8 +156,10 @@
     }
 
     function handleOrientation(event) {
-      const rawGamma = event.gamma || 0;
-      const gamma = rawGamma - currentOffset;
+      const gamma = (event.gamma || 0) - offset.gamma;
+      const beta = (event.beta || 0) - offset.beta;
+      const alpha = (event.alpha || 0) - offset.alpha;
+
       const lean = parseFloat(gamma.toFixed(1));
       document.getElementById('currentLean').textContent = lean.toFixed(1);
 
@@ -190,7 +192,7 @@
       maxLeftLean = 0;
       maxRightLean = 0;
       leanStartTime = null;
-      currentOffset = 0;
+      offset = { alpha: 0, beta: 0, gamma: 0 };
       document.getElementById('maxLeft').textContent = '0.0';
       document.getElementById('maxRight').textContent = '0.0';
       document.getElementById('currentLean').textContent = '0.0';
@@ -202,13 +204,13 @@
 
     function reinitSensor() {
       window.removeEventListener('deviceorientation', handleOrientation);
-
       const captureOffset = (event) => {
-        currentOffset = event.gamma || 0;
+        offset.alpha = event.alpha || 0;
+        offset.beta = event.beta || 0;
+        offset.gamma = event.gamma || 0;
         window.removeEventListener('deviceorientation', captureOffset);
         window.addEventListener('deviceorientation', handleOrientation);
       };
-
       window.addEventListener('deviceorientation', captureOffset);
     }
 
