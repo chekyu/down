@@ -88,6 +88,7 @@
 
 <body>
     <div id="map"></div>
+    <canvas id="background"></canvas>
     <canvas id="hud"></canvas>
     <canvas id="graphCanvas" width="400" height="80"></canvas>
 
@@ -109,15 +110,10 @@
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
 
-        let yawOffset = 0,
-            pitchOffset = 0,
-            rollOffset = 0;
-        let filteredYaw = 0,
-            filteredPitch = 0,
-            filteredRoll = 0;
+        let yawOffset = 0, pitchOffset = 0, rollOffset = 0;
+        let filteredYaw = 0, filteredPitch = 0, filteredRoll = 0;
         const alpha = 0.1;
-        const pitchHistory = [],
-            rollHistory = [];
+        const pitchHistory = [], rollHistory = [];
 
         let map, marker;
 
