@@ -32,35 +32,29 @@
       left: 0;
       z-index: 1;
     }
-    #info {
+    #info, #status, #controls {
+      z-index: 10;
       position: absolute;
+      background: rgba(0,0,0,0.6);
+      color: #fff;
+      padding: 10px;
+      border-radius: 8px;
+    }
+    #info {
       top: 10px;
       left: 50%;
       transform: translateX(-50%);
-      background: rgba(0, 0, 0, 0.6);
-      padding: 10px 20px;
-      border-radius: 10px;
-      z-index: 10;
-      color: #fff;
+    }
+    #status {
+      top: 10px;
+      right: 10px;
+      font-size: 0.9rem;
+      text-align: right;
     }
     #controls {
-      position: absolute;
       bottom: 20px;
       left: 50%;
       transform: translateX(-50%);
-      z-index: 10;
-    }
-    #status {
-      position: absolute;
-      top: 10px;
-      right: 10px;
-      background: rgba(0, 0, 0, 0.6);
-      padding: 10px;
-      border-radius: 8px;
-      z-index: 10;
-      color: #fff;
-      font-size: 0.9rem;
-      text-align: right;
     }
     #graphCanvas {
       position: absolute;
@@ -81,6 +75,9 @@
     button:hover {
       background: #0ff;
       color: #000;
+    }
+    .marker-rotated {
+      transform-origin: center;
     }
   </style>
 </head>
@@ -116,22 +113,32 @@
     const alpha = 0.1;
     const pitchHistory = [], rollHistory = [];
 
-    let map, marker;
+    let map, marker, markerIcon;
+
+    markerIcon = L.divIcon({
+      className: '',
+      html: '<div id="headingMarker" style="width: 24px; height: 24px; background: url(\'data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"cyan\"><path d=\"M12 2L15 22L12 17L9 22L12 2Z\"/></svg>\') no-repeat center; background-size: contain;"></div>',
+      iconSize: [24, 24],
+      iconAnchor: [12, 12]
+    });
 
     function initMap(lat, lon) {
       map = L.map('map').setView([lat, lon], 17);
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        maxZoom: 19,
-        attribution: '© OpenStreetMap'
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+        attribution: '&copy; OpenStreetMap contributors & CartoDB',
+        subdomains: 'abcd',
+        maxZoom: 19
       }).addTo(map);
-      marker = L.marker([lat, lon]).addTo(map);
+      marker = L.marker([lat, lon], { icon: markerIcon }).addTo(map);
     }
 
-    function updateMap(lat, lon) {
+    function updateMap(lat, lon, heading) {
       if (!map) initMap(lat, lon);
       else {
         map.setView([lat, lon]);
         marker.setLatLng([lat, lon]);
+        const m = document.getElementById('headingMarker');
+        if (m) m.style.transform = `rotate(${heading}deg)`;
       }
     }
 
@@ -155,6 +162,7 @@
       ctx.clearRect(0, 0, w, h);
       ctx.save();
       ctx.translate(w / 2, h / 2);
+
       ctx.beginPath();
       ctx.strokeStyle = '#0ff';
       ctx.lineWidth = 3;
@@ -243,6 +251,11 @@
 
       drawHUD(parseFloat(relRoll), parseFloat(relPitch), parseFloat(relYaw));
       drawGraphs();
+
+      if (marker && marker.getLatLng) {
+        const { lat, lng } = marker.getLatLng();
+        updateMap(lat, lng, parseFloat(relYaw));
+      }
     }
 
     function updateGPS(position) {
@@ -252,7 +265,7 @@
       const speed = coords.speed != null ? (coords.speed * 3.6).toFixed(1) : 0;
       document.getElementById("speed").textContent = speed;
       document.getElementById("coords").textContent = `${lat}, ${lon}`;
-      updateMap(coords.latitude, coords.longitude);
+      updateMap(coords.latitude, coords.longitude, filteredYaw);
     }
 
     if (navigator.geolocation) {
