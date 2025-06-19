@@ -2,59 +2,84 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
-  <title>Roll / Pitch / Yaw 표시</title>
+  <title>기기 자세 측정기 (초기화 포함)</title>
   <style>
     body {
-      background: #111;
+      background: #000;
       color: #0f0;
       font-family: monospace;
-      font-size: 1.5rem;
+      font-size: 1.4rem;
       padding: 2rem;
     }
     h1 {
-      font-size: 2rem;
       color: #fff;
+      font-size: 2rem;
     }
     .angle {
       margin: 1rem 0;
     }
+    button {
+      margin-top: 2rem;
+      padding: 1rem 2rem;
+      font-size: 1rem;
+      cursor: pointer;
+    }
   </style>
 </head>
 <body>
-  <h1>Device Orientation</h1>
+  <h1>Roll / Pitch / Yaw 측정기</h1>
   <div class="angle">Yaw (alpha): <span id="yaw">0</span>°</div>
   <div class="angle">Pitch (beta): <span id="pitch">0</span>°</div>
   <div class="angle">Roll (gamma): <span id="roll">0</span>°</div>
+  <button id="resetBtn">현재 자세를 기준으로 초기화</button>
 
   <script>
-    function updateAngles(event) {
-      const yaw = event.alpha ?? 0;   // Z축 회전 (방향)
-      const pitch = event.beta ?? 0;  // X축 회전 (앞뒤)
-      const roll = event.gamma ?? 0;  // Y축 회전 (좌우)
+    let yawOffset = 0, pitchOffset = 0, rollOffset = 0;
+    let lastAlpha = 0, lastBeta = 0, lastGamma = 0;
 
-      document.getElementById('yaw').textContent = yaw.toFixed(1);
-      document.getElementById('pitch').textContent = pitch.toFixed(1);
-      document.getElementById('roll').textContent = roll.toFixed(1);
+    function updateAngles(event) {
+      const alpha = event.alpha ?? 0;  // Yaw
+      const beta = event.beta ?? 0;    // Pitch
+      const gamma = event.gamma ?? 0;  // Roll
+
+      lastAlpha = alpha;
+      lastBeta = beta;
+      lastGamma = gamma;
+
+      const yaw = ((alpha - yawOffset + 360) % 360).toFixed(1);
+      const pitch = (beta - pitchOffset).toFixed(1);
+      const roll = (gamma - rollOffset).toFixed(1);
+
+      document.getElementById('yaw').textContent = yaw;
+      document.getElementById('pitch').textContent = pitch;
+      document.getElementById('roll').textContent = roll;
     }
 
-    // iOS 13+의 권한 요청 처리
+    function resetReference() {
+      yawOffset = lastAlpha;
+      pitchOffset = lastBeta;
+      rollOffset = lastGamma;
+    }
+
+    // 초기화 버튼
+    document.getElementById('resetBtn').addEventListener('click', resetReference);
+
+    // iOS 권한 요청
     if (typeof DeviceOrientationEvent !== 'undefined' &&
         typeof DeviceOrientationEvent.requestPermission === 'function') {
-      // iOS
-      const button = document.createElement('button');
-      button.innerText = '센서 사용 허용';
-      button.style.padding = '1rem';
-      button.onclick = () => {
+      const permissionButton = document.createElement('button');
+      permissionButton.innerText = '센서 접근 허용 (iOS)';
+      permissionButton.style.padding = '1rem';
+      permissionButton.onclick = () => {
         DeviceOrientationEvent.requestPermission().then(response => {
           if (response === 'granted') {
             window.addEventListener('deviceorientation', updateAngles);
-            button.remove();
+            permissionButton.remove();
           }
         }).catch(console.error);
       };
-      document.body.appendChild(button);
+      document.body.appendChild(permissionButton);
     } else {
-      // Android or iOS 12 이하
       window.addEventListener('deviceorientation', updateAngles);
     }
   </script>
