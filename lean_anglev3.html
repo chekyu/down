@@ -1,153 +1,287 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>모터사이클 Lean HUD</title>
+  <meta charset="UTF-8">
+  <title>Ultimate HUD</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#000000">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="icon-192.png">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
   <style>
-    body {
-      background: black;
+    html, body {
       margin: 0;
+      padding: 0;
+      background: #000;
       overflow: hidden;
-      font-family: sans-serif;
+      height: 100vh;
+      width: 100vw;
+      font-family: monospace;
+      color: #0ff;
     }
     canvas {
-      display: block;
+      position: absolute;
+      top: 0;
+      left: 0;
+      z-index: 0;
     }
-    #hud {
+    #info {
       position: absolute;
       top: 10px;
-      left: 10px;
-      color: #0f0;
-      font-size: 1rem;
-      background: rgba(0,0,0,0.5);
-      padding: 10px;
-      border-radius: 6px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0, 0, 0, 0.6);
+      padding: 10px 20px;
+      border-radius: 10px;
+      z-index: 10;
+      color: #fff;
     }
-    #resetBtn {
+    #controls {
+      position: absolute;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 10;
+    }
+    #status {
       position: absolute;
       top: 10px;
       right: 10px;
-      padding: 10px 15px;
+      background: rgba(0, 0, 0, 0.6);
+      padding: 10px;
+      border-radius: 8px;
+      z-index: 10;
+      color: #fff;
+      font-size: 0.9rem;
+      text-align: right;
+    }
+    #graphCanvas {
+      position: absolute;
+      bottom: 160px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 5;
+    }
+    #map {
+      position: absolute;
+      bottom: 60px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 90%;
+      height: 100px;
+      z-index: 5;
+      border: 2px solid #0ff;
+      border-radius: 10px;
+    }
+    button {
+      padding: 10px 25px;
       font-size: 1rem;
-      background: #0f0;
-      color: black;
-      border: none;
-      border-radius: 5px;
+      background: transparent;
+      color: #0ff;
+      border: 2px solid #0ff;
+      border-radius: 10px;
       cursor: pointer;
+    }
+    button:hover {
+      background: #0ff;
+      color: #000;
     }
   </style>
 </head>
 <body>
-  <canvas id="hudCanvas"></canvas>
-  <div id="hud">
-    최대 좌측 기울기: <span id="maxLeft">0.0</span>&deg;<br>
-    최대 우측 기울기: <span id="maxRight">0.0</span>&deg;
+  <canvas id="hud"></canvas>
+  <canvas id="graphCanvas" width="400" height="80"></canvas>
+  <div id="map"></div>
+
+  <div id="info">
+    <div>Yaw: <span id="yaw">0</span>° (<span id="direction">-</span>)</div>
+    <div>Pitch: <span id="pitch">0</span>°</div>
+    <div>Roll: <span id="roll">0</span>°</div>
   </div>
-  <button id="resetBtn" onclick="resetMax()">최대값 초기화</button>
+  <div id="status">
+    속도: <span id="speed">0</span> km/h<br>
+    위치: <span id="coords">-</span>
+  </div>
+  <div id="controls">
+    <button onclick="resetReference()">RESET</button>
+  </div>
 
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
   <script>
-    const canvas = document.getElementById('hudCanvas');
+    const canvas = document.getElementById('hud');
     const ctx = canvas.getContext('2d');
-    let maxLeftLean = 0;
-    let maxRightLean = 0;
+    const graphCanvas = document.getElementById('graphCanvas');
+    const graphCtx = graphCanvas.getContext('2d');
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
 
-    function resizeCanvas() {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
+    let yawOffset = 0, pitchOffset = 0, rollOffset = 0;
+    let filteredYaw = 0, filteredPitch = 0, filteredRoll = 0;
+    const alpha = 0.1;
+    const pitchHistory = [], rollHistory = [];
+
+    let map, marker;
+
+    function initMap(lat, lon) {
+      map = L.map('map').setView([lat, lon], 17);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '© OpenStreetMap'
+      }).addTo(map);
+      marker = L.marker([lat, lon]).addTo(map);
     }
 
-    window.addEventListener('resize', resizeCanvas);
-    resizeCanvas();
+    function updateMap(lat, lon) {
+      if (!map) initMap(lat, lon);
+      else {
+        map.setView([lat, lon]);
+        marker.setLatLng([lat, lon]);
+      }
+    }
 
-    function drawHUD(angle) {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    function resetReference() {
+      yawOffset = filteredYaw;
+      pitchOffset = filteredPitch;
+      rollOffset = filteredRoll;
+    }
 
-      const centerX = canvas.width / 2;
-      const centerY = canvas.height / 2;
+    function getDirectionText(yaw) {
+      const d = Math.round(yaw);
+      if (d >= 45 && d < 135) return "E";
+      if (d >= 135 && d < 225) return "S";
+      if (d >= 225 && d < 315) return "W";
+      return "N";
+    }
 
-      // 기준선
-      ctx.strokeStyle = '#0f0';
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.moveTo(centerX - 100, centerY);
-      ctx.lineTo(centerX + 100, centerY);
-      ctx.stroke();
-
-      // 수평선 (기울기 반영)
+    function drawHUD(roll, pitch, yaw) {
+      const w = canvas.width;
+      const h = canvas.height;
+      ctx.clearRect(0, 0, w, h);
       ctx.save();
-      ctx.translate(centerX, centerY);
-      ctx.rotate(-angle * Math.PI / 180);
+      ctx.translate(w / 2, h / 2);
+      ctx.beginPath();
       ctx.strokeStyle = '#0ff';
-      ctx.lineWidth = 4;
-      ctx.beginPath();
-      ctx.moveTo(-150, 0);
-      ctx.lineTo(150, 0);
+      ctx.lineWidth = 3;
+      ctx.arc(0, 0, 120, -Math.PI / 2 - roll * Math.PI / 180, -Math.PI / 2);
       ctx.stroke();
-      ctx.restore();
 
-      // 중앙 마커
-      ctx.fillStyle = '#f00';
+      ctx.strokeStyle = '#0f0';
+      for (let i = -90; i <= 90; i += 10) {
+        const y = (pitch - i) * 2;
+        ctx.beginPath();
+        ctx.moveTo(-40, y);
+        ctx.lineTo(40, y);
+        ctx.stroke();
+      }
+
+      ctx.strokeStyle = '#fff';
       ctx.beginPath();
-      ctx.arc(centerX, centerY, 6, 0, 2 * Math.PI);
-      ctx.fill();
+      ctx.moveTo(-15, 0);
+      ctx.lineTo(15, 0);
+      ctx.moveTo(0, -15);
+      ctx.lineTo(0, 15);
+      ctx.stroke();
+
+      ctx.rotate(-yaw * Math.PI / 180);
+      ctx.strokeStyle = '#ff0';
+      ctx.beginPath();
+      ctx.arc(0, 0, 150, 0, 2 * Math.PI);
+      ctx.stroke();
+      ['N','E','S','W'].forEach((dir, i) => {
+        const angle = i * Math.PI / 2;
+        const x = Math.cos(angle) * 150;
+        const y = Math.sin(angle) * 150;
+        ctx.fillStyle = '#ff0';
+        ctx.font = '20px monospace';
+        ctx.fillText(dir, x - 10, y + 5);
+      });
+
+      ctx.restore();
     }
 
-    function handleOrientation(event) {
-      const gamma = event.gamma || 0;
-      const lean = parseFloat(gamma.toFixed(1));
+    function drawGraphs() {
+      const w = graphCanvas.width;
+      const h = graphCanvas.height;
+      graphCtx.clearRect(0, 0, w, h);
 
-      if (lean < 0 && Math.abs(lean) > maxLeftLean) {
-        maxLeftLean = Math.abs(lean);
-        document.getElementById('maxLeft').textContent = maxLeftLean.toFixed(1);
-        localStorage.setItem('maxLeftLean', maxLeftLean);
-      }
+      graphCtx.beginPath();
+      graphCtx.strokeStyle = '#0f0';
+      pitchHistory.forEach((val, i) => {
+        const y = h / 2 - val;
+        if (i === 0) graphCtx.moveTo(i, y);
+        else graphCtx.lineTo(i, y);
+      });
+      graphCtx.stroke();
 
-      if (lean > 0 && lean > maxRightLean) {
-        maxRightLean = lean;
-        document.getElementById('maxRight').textContent = maxRightLean.toFixed(1);
-        localStorage.setItem('maxRightLean', maxRightLean);
-      }
-
-      drawHUD(lean);
+      graphCtx.beginPath();
+      graphCtx.strokeStyle = '#f0f';
+      rollHistory.forEach((val, i) => {
+        const y = h / 2 - val;
+        if (i === 0) graphCtx.moveTo(i, y);
+        else graphCtx.lineTo(i, y);
+      });
+      graphCtx.stroke();
     }
 
-    function resetMax() {
-      maxLeftLean = 0;
-      maxRightLean = 0;
-      document.getElementById('maxLeft').textContent = '0.0';
-      document.getElementById('maxRight').textContent = '0.0';
-      localStorage.removeItem('maxLeftLean');
-      localStorage.removeItem('maxRightLean');
+    function update(e) {
+      const rawYaw = (e.alpha ?? 0);
+      const rawPitch = (e.beta ?? 0);
+      const rawRoll = (e.gamma ?? 0);
+      filteredYaw = alpha * rawYaw + (1 - alpha) * filteredYaw;
+      filteredPitch = alpha * rawPitch + (1 - alpha) * filteredPitch;
+      filteredRoll = alpha * rawRoll + (1 - alpha) * filteredRoll;
+
+      const relYaw = ((filteredYaw - yawOffset + 360) % 360).toFixed(1);
+      const relPitch = (filteredPitch - pitchOffset).toFixed(1);
+      const relRoll = (filteredRoll - rollOffset).toFixed(1);
+
+      document.getElementById("yaw").textContent = relYaw;
+      document.getElementById("pitch").textContent = relPitch;
+      document.getElementById("roll").textContent = relRoll;
+      document.getElementById("direction").textContent = getDirectionText(parseFloat(relYaw));
+
+      pitchHistory.push(parseFloat(relPitch));
+      rollHistory.push(parseFloat(relRoll));
+      if (pitchHistory.length > graphCanvas.width) pitchHistory.shift();
+      if (rollHistory.length > graphCanvas.width) rollHistory.shift();
+
+      drawHUD(parseFloat(relRoll), parseFloat(relPitch), parseFloat(relYaw));
+      drawGraphs();
     }
 
-    function initSensor() {
-      const storedLeft = localStorage.getItem('maxLeftLean');
-      const storedRight = localStorage.getItem('maxRightLean');
+    function updateGPS(position) {
+      const coords = position.coords;
+      const lat = coords.latitude.toFixed(5);
+      const lon = coords.longitude.toFixed(5);
+      const speed = coords.speed != null ? (coords.speed * 3.6).toFixed(1) : 0;
+      document.getElementById("speed").textContent = speed;
+      document.getElementById("coords").textContent = `${lat}, ${lon}`;
+      updateMap(coords.latitude, coords.longitude);
+    }
 
-      if (storedLeft) {
-        maxLeftLean = parseFloat(storedLeft);
-        document.getElementById('maxLeft').textContent = maxLeftLean.toFixed(1);
-      }
-      if (storedRight) {
-        maxRightLean = parseFloat(storedRight);
-        document.getElementById('maxRight').textContent = maxRightLean.toFixed(1);
-      }
+    if (navigator.geolocation) {
+      navigator.geolocation.watchPosition(updateGPS);
+    }
 
-      if (typeof DeviceOrientationEvent.requestPermission === 'function') {
-        DeviceOrientationEvent.requestPermission().then(response => {
-          if (response === 'granted') {
-            window.addEventListener('deviceorientation', handleOrientation);
-          } else {
-            alert('센서 권한이 거부되었습니다.');
+    if (typeof DeviceOrientationEvent !== "undefined" && typeof DeviceOrientationEvent.requestPermission === "function") {
+      const btn = document.createElement("button");
+      btn.innerText = "센서 허용";
+      btn.style.position = "absolute";
+      btn.style.top = "50%";
+      btn.style.left = "50%";
+      btn.style.transform = "translate(-50%, -50%)";
+      btn.onclick = () => {
+        DeviceOrientationEvent.requestPermission().then(resp => {
+          if (resp === "granted") {
+            window.addEventListener("deviceorientation", update);
+            btn.remove();
           }
         });
-      } else {
-        window.addEventListener('deviceorientation', handleOrientation);
-      }
+      };
+      document.body.appendChild(btn);
+    } else {
+      window.addEventListener("deviceorientation", update);
     }
-
-    window.onload = initSensor;
   </script>
 </body>
 </html>
