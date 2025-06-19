@@ -32,18 +32,13 @@
       left: 0;
       z-index: 1;
     }
-    #info, #status, #controls {
+    #status, #controls {
       z-index: 10;
       position: absolute;
       background: rgba(0,0,0,0.6);
       color: #fff;
       padding: 10px;
       border-radius: 8px;
-    }
-    #info {
-      top: 10px;
-      left: 50%;
-      transform: translateX(-50%);
     }
     #status {
       top: 10px;
@@ -86,14 +81,11 @@
   <canvas id="hud"></canvas>
   <canvas id="graphCanvas" width="400" height="80"></canvas>
 
-  <div id="info">
-    <div>Yaw: <span id="yaw">0</span>° (<span id="direction">-</span>)</div>
-    <div>Pitch: <span id="pitch">0</span>°</div>
-    <div>Roll: <span id="roll">0</span>°</div>
-  </div>
   <div id="status">
     속도: <span id="speed">0</span> km/h<br>
-    위치: <span id="coords">-</span>
+    <div>Yaw: <span id="yaw">0</span></div>
+    <div>Pitch: <span id="pitch">0</span>°</div>
+    <div>Roll: <span id="roll">0</span>°</div>
   </div>
   <div id="controls">
     <button onclick="resetReference()">RESET</button>
