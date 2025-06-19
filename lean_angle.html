@@ -215,7 +215,7 @@
             document.getElementById('alpha').textContent = alpha.toFixed(1);
 
             //const lean = parseFloat(gamma.toFixed(1));
-            const lean Math.atan2(gamma, Math.sqrt(beta * beta + alpha * alpha)) * (180 / Math.PI);
+            const lean = Math.atan2(gamma, Math.sqrt(beta * beta + alpha * alpha)) * (180 / Math.PI);
             document.getElementById('currentLean').textContent = lean.toFixed(1);
 
             const now = Date.now();
