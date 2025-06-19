@@ -96,6 +96,7 @@
         <div>Z축 : <span id="alpha">0</span> &deg;</div>
         <div>X축 : <span id="gamma">0</span> &deg;</div>
         <div>Y축 : <span id="beta">0</span> &deg;</div>
+        <div>기울기: <span id="totalAngle">0.0</span>&deg;</div>
         <div>기울기 유지시간: <span id="duration">0.0</span>초</div>
         <div>현재 좌우 기울기: <span id="currentLean">0.0</span>&deg;</div>
         <div>최대 좌측 기울기: <span id="maxLeft">0.0</span>&deg;</div>
@@ -214,9 +215,12 @@
             document.getElementById('beta').textContent = beta.toFixed(1);
             document.getElementById('alpha').textContent = alpha.toFixed(1);
 
+            let totalAngle = Math.sqrt(gamma * gamma + beta * beta); // 수평면 기준의 전체 기울기 크기
+            document.getElementById('totalAngle').textContent = totalAngle.toFixed(1);
+
             //const lean = parseFloat(gamma.toFixed(1));
             const lean = Math.atan2(gamma, Math.sqrt(beta * beta + alpha * alpha)) * (180 / Math.PI);
-            document.getElementById('currentLean').textContent = lean.toFixed(1);
+            
 
             const now = Date.now();
             if (Math.abs(lean) > 5) {
