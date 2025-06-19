@@ -1,290 +1,314 @@
 <!DOCTYPE html>
 <html lang="ko">
+
 <head>
-  <meta charset="UTF-8">
-  <title>Ultimate HUD</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#000000">
-  <!-- <link rel="manifest" href="manifest.json"> -->
-  <!-- <link rel="icon" href="icon-192.png"> -->
-  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-  <style>
-    html, body {
-      margin: 0;
-      padding: 0;
-      overflow: hidden;
-      height: 100vh;
-      width: 100vw;
-      font-family: monospace;
-      color: #0ff;
-    }
-    #map {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      z-index: 0;
-    }
-    canvas {
-      position: absolute;
-      top: 0;
-      left: 0;
-      z-index: 1;
-    }
-    #status, #controls {
-      z-index: 10;
-      position: absolute;
-      background: rgba(0,0,0,0.6);
-      color: #fff;
-      padding: 10px;
-      border-radius: 8px;
-    }
-    #status {
-      top: 10px;
-      right: 10px;
-      font-size: 0.9rem;
-      text-align: right;
-    }
-    #controls {
-      bottom: 20px;
-      left: 50%;
-      transform: translateX(-50%);
-    }
-    #graphCanvas {
-      position: absolute;
-      bottom: 100px;
-      left: 50%;
-      transform: translateX(-50%);
-      z-index: 5;
-    }
-    button {
-      padding: 10px 25px;
-      font-size: 1rem;
-      background: transparent;
-      color: #0ff;
-      border: 2px solid #0ff;
-      border-radius: 10px;
-      cursor: pointer;
-    }
-    button:hover {
-      background: #0ff;
-      color: #000;
-    }
-    .marker-rotated {
-      transform-origin: center;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <title>Ultimate HUD</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#000000">
+    <!-- <link rel="manifest" href="manifest.json"> -->
+    <!-- <link rel="icon" href="icon-192.png"> -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <style>
+        html,
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            height: 100vh;
+            width: 100vw;
+            font-family: monospace;
+            color: #0ff;
+        }
+
+        #map {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+        }
+
+        canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
+        }
+
+        #status,
+        #controls {
+            z-index: 10;
+            position: absolute;
+            background: rgba(0, 0, 0, 0.6);
+            color: #fff;
+            padding: 10px;
+            border-radius: 8px;
+        }
+
+        #status {
+            top: 10px;
+            right: 10px;
+            font-size: 0.9rem;
+            text-align: right;
+        }
+
+        #controls {
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        #graphCanvas {
+            position: absolute;
+            bottom: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 5;
+        }
+
+        button {
+            padding: 10px 25px;
+            font-size: 1rem;
+            background: transparent;
+            color: #0ff;
+            border: 2px solid #0ff;
+            border-radius: 10px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #0ff;
+            color: #000;
+        }
+
+        .marker-rotated {
+            transform-origin: center;
+        }
+    </style>
 </head>
+
 <body>
-  <div id="map"></div>
-  <canvas id="hud"></canvas>
-  <canvas id="graphCanvas" width="400" height="80"></canvas>
+    <div id="map"></div>
+    <canvas id="hud"></canvas>
+    <canvas id="graphCanvas" width="400" height="80"></canvas>
 
-  <div id="status">
-    속도: <span id="speed">0</span> km/h<br>
-    <div>Yaw: <span id="yaw">0</span>°</div>
-    <div>Pitch: <span id="pitch">0</span>°</div>
-    <div>Roll: <span id="roll">0</span>°</div>
-  </div>
-  <div id="controls">
-    <button onclick="resetReference()">RESET</button>
-  </div>
-  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-  <script>
-    const canvas = document.getElementById('hud');
-    const ctx = canvas.getContext('2d');
-    const graphCanvas = document.getElementById('graphCanvas');
-    const graphCtx = graphCanvas.getContext('2d');
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
+    <div id="status">
+        속도: <span id="speed">0</span> km/h<br>
+        <div>Yaw: <span id="yaw">0</span>°</div>
+        <div>Pitch: <span id="pitch">0</span>°</div>
+        <div>Roll: <span id="roll">0</span>°</div>
+    </div>
+    <div id="controls">
+        <button onclick="resetReference()">RESET</button>
+    </div>
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script>
+        const canvas = document.getElementById('hud');
+        const ctx = canvas.getContext('2d');
+        const graphCanvas = document.getElementById('graphCanvas');
+        const graphCtx = graphCanvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
 
-    let yawOffset = 0, pitchOffset = 0, rollOffset = 0;
-    let filteredYaw = 0, filteredPitch = 0, filteredRoll = 0;
-    const alpha = 0.1;
-    const pitchHistory = [], rollHistory = [];
+        let yawOffset = 0,
+            pitchOffset = 0,
+            rollOffset = 0;
+        let filteredYaw = 0,
+            filteredPitch = 0,
+            filteredRoll = 0;
+        const alpha = 0.1;
+        const pitchHistory = [],
+            rollHistory = [];
 
-    let map, marker, markerIcon;
+        let map, marker, markerIcon;
 
-    const svg = `
+        const svg = `
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="cyan">
       <path d="M12 2L15 22L12 17L9 22L12 2Z"/>
     </svg>`;
-    const encodedSvg = encodeURIComponent(svg.trim());
+        const encodedSvg = encodeURIComponent(svg.trim());
 
-    markerIcon = L.divIcon({
-    className: '',
-    html: `<div id="headingMarker" style="
+        markerIcon = L.divIcon({
+            className: '',
+            html: `<div id="headingMarker" style="
       width: 24px;
       height: 24px;
       background: url('data:image/svg+xml;utf8,${encodedSvg}') no-repeat center;
       background-size: contain;
     "></div>`,
-    iconSize: [24, 24],
-    iconAnchor: [12, 12]
-  });
-
-    function initMap(lat, lon) {
-      map = L.map('map').setView([lat, lon], 17);
-      L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-        attribution: '&copy; OpenStreetMap contributors & CartoDB',
-        subdomains: 'abcd',
-        maxZoom: 19
-      }).addTo(map);
-      marker = L.marker([lat, lon], { icon: markerIcon }).addTo(map);
-    }
-
-    function updateMap(lat, lon, heading) {
-      if (!map) initMap(lat, lon);
-      else {
-        map.setView([lat, lon]);
-        marker.setLatLng([lat, lon]);
-        const m = document.getElementById('headingMarker');
-        if (m) m.style.transform = `rotate(${heading}deg)`;
-      }
-    }
-
-    function resetReference() {
-      yawOffset = filteredYaw;
-      pitchOffset = filteredPitch;
-      rollOffset = filteredRoll;
-    }
-
-    function drawHUD(roll, pitch, yaw) {
-      const w = canvas.width;
-      const h = canvas.height;
-      ctx.clearRect(0, 0, w, h);
-      ctx.save();
-      ctx.translate(w / 2, h / 2);
-
-      ctx.beginPath();
-      ctx.strokeStyle = '#0ff';
-      ctx.lineWidth = 3;
-      ctx.arc(0, 0, 120, -Math.PI / 2 - roll * Math.PI / 180, -Math.PI / 2);
-      ctx.stroke();
-
-      ctx.strokeStyle = '#0f0';
-      for (let i = -90; i <= 90; i += 10) {
-        const y = (pitch - i) * 2;
-        ctx.beginPath();
-        ctx.moveTo(-40, y);
-        ctx.lineTo(40, y);
-        ctx.stroke();
-      }
-
-      ctx.strokeStyle = '#fff';
-      ctx.beginPath();
-      ctx.moveTo(-15, 0);
-      ctx.lineTo(15, 0);
-      ctx.moveTo(0, -15);
-      ctx.lineTo(0, 15);
-      ctx.stroke();
-
-      ctx.rotate(-yaw * Math.PI / 180);
-      ctx.strokeStyle = '#ff0';
-      ctx.beginPath();
-      ctx.arc(0, 0, 150, 0, 2 * Math.PI);
-      ctx.stroke();
-      ['N','E','S','W'].forEach((dir, i) => {
-        const angle = i * Math.PI / 2;
-        const x = Math.cos(angle) * 150;
-        const y = Math.sin(angle) * 150;
-        ctx.fillStyle = '#ff0';
-        ctx.font = '20px monospace';
-        ctx.fillText(dir, x - 10, y + 5);
-      });
-
-      ctx.restore();
-    }
-
-    function drawGraphs() {
-      const w = graphCanvas.width;
-      const h = graphCanvas.height;
-      graphCtx.clearRect(0, 0, w, h);
-
-      graphCtx.beginPath();
-      graphCtx.strokeStyle = '#0f0';
-      pitchHistory.forEach((val, i) => {
-        const y = h / 2 - val;
-        if (i === 0) graphCtx.moveTo(i, y);
-        else graphCtx.lineTo(i, y);
-      });
-      graphCtx.stroke();
-
-      graphCtx.beginPath();
-      graphCtx.strokeStyle = '#f0f';
-      rollHistory.forEach((val, i) => {
-        const y = h / 2 - val;
-        if (i === 0) graphCtx.moveTo(i, y);
-        else graphCtx.lineTo(i, y);
-      });
-      graphCtx.stroke();
-    }
-
-    function update(e) {
-      const rawYaw = (e.alpha ?? 0);
-      const rawPitch = (e.beta ?? 0);
-      const rawRoll = (e.gamma ?? 0);
-      filteredYaw = alpha * rawYaw + (1 - alpha) * filteredYaw;
-      filteredPitch = alpha * rawPitch + (1 - alpha) * filteredPitch;
-      filteredRoll = alpha * rawRoll + (1 - alpha) * filteredRoll;
-
-      const relYaw = ((filteredYaw - yawOffset + 360) % 360).toFixed(1);
-      const relPitch = (filteredPitch - pitchOffset).toFixed(1);
-      const relRoll = (filteredRoll - rollOffset).toFixed(1);
-
-      document.getElementById("yaw").textContent = relYaw;
-      document.getElementById("pitch").textContent = relPitch;
-      document.getElementById("roll").textContent = relRoll;
-      
-      pitchHistory.push(parseFloat(relPitch));
-      rollHistory.push(parseFloat(relRoll));
-      if (pitchHistory.length > graphCanvas.width) pitchHistory.shift();
-      if (rollHistory.length > graphCanvas.width) rollHistory.shift();
-
-      drawHUD(parseFloat(relRoll), parseFloat(relPitch), parseFloat(relYaw));
-      drawGraphs();
-
-      if (marker && marker.getLatLng) {
-        const { lat, lng } = marker.getLatLng();
-        updateMap(lat, lng, parseFloat(relYaw));
-      }
-    }
-
-    function updateGPS(position) {
-      const coords = position.coords;
-      const lat = coords.latitude.toFixed(5);
-      const lon = coords.longitude.toFixed(5);
-      const speed = coords.speed != null ? (coords.speed * 3.6).toFixed(1) : 0;
-      document.getElementById("speed").textContent = speed;
-      document.getElementById("coords").textContent = `${lat}, ${lon}`;
-      updateMap(coords.latitude, coords.longitude, filteredYaw);
-    }
-
-    if (navigator.geolocation) {
-      navigator.geolocation.watchPosition(updateGPS);
-    }
-
-    if (typeof DeviceOrientationEvent !== "undefined" && typeof DeviceOrientationEvent.requestPermission === "function") {
-      const btn = document.createElement("button");
-      btn.innerText = "센서 허용";
-      btn.style.position = "absolute";
-      btn.style.top = "50%";
-      btn.style.left = "50%";
-      btn.style.transform = "translate(-50%, -50%)";
-      btn.style.zIndex = "999";
-      btn.onclick = () => {
-        DeviceOrientationEvent.requestPermission().then(resp => {
-          if (resp === "granted") {
-            window.addEventListener("deviceorientation", update);
-            btn.remove();
-          }
+            iconSize: [24, 24],
+            iconAnchor: [12, 12]
         });
-      };
-      document.body.appendChild(btn);
-    } else {
-      window.addEventListener("deviceorientation", update);
-    }
-  </script>
+
+        function initMap(lat, lon) {
+            map = L.map('map').setView([lat, lon], 17);
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+                attribution: '&copy; OpenStreetMap contributors & CartoDB',
+                subdomains: 'abcd',
+                maxZoom: 19
+            }).addTo(map);
+            marker = L.marker([lat, lon], {
+                icon: markerIcon
+            }).addTo(map);
+        }
+
+        function updateMap(lat, lon, heading) {
+            if (!map) initMap(lat, lon);
+            else {
+                map.setView([lat, lon]);
+                marker.setLatLng([lat, lon]);
+                const m = document.getElementById('headingMarker');
+                if (m) m.style.transform = `rotate(${heading}deg)`;
+            }
+        }
+
+        function resetReference() {
+            yawOffset = filteredYaw;
+            pitchOffset = filteredPitch;
+            rollOffset = filteredRoll;
+        }
+
+        function drawHUD(roll, pitch, yaw) {
+            const w = canvas.width;
+            const h = canvas.height;
+            ctx.clearRect(0, 0, w, h);
+            ctx.save();
+            ctx.translate(w / 2, h / 2);
+
+            ctx.beginPath();
+            ctx.strokeStyle = '#0ff';
+            ctx.lineWidth = 3;
+            ctx.arc(0, 0, 120, -Math.PI / 2 - roll * Math.PI / 180, -Math.PI / 2);
+            ctx.stroke();
+
+            ctx.strokeStyle = '#0f0';
+            for (let i = -90; i <= 90; i += 10) {
+                const y = (pitch - i) * 2;
+                ctx.beginPath();
+                ctx.moveTo(-40, y);
+                ctx.lineTo(40, y);
+                ctx.stroke();
+            }
+
+            ctx.strokeStyle = '#fff';
+            ctx.beginPath();
+            ctx.moveTo(-15, 0);
+            ctx.lineTo(15, 0);
+            ctx.moveTo(0, -15);
+            ctx.lineTo(0, 15);
+            ctx.stroke();
+
+            ctx.rotate(-yaw * Math.PI / 180);
+            ctx.strokeStyle = '#ff0';
+            ctx.beginPath();
+            ctx.arc(0, 0, 150, 0, 2 * Math.PI);
+            ctx.stroke();
+            ['N', 'E', 'S', 'W'].forEach((dir, i) => {
+                const angle = i * Math.PI / 2;
+                const x = Math.cos(angle) * 150;
+                const y = Math.sin(angle) * 150;
+                ctx.fillStyle = '#ff0';
+                ctx.font = '20px monospace';
+                ctx.fillText(dir, x - 10, y + 5);
+            });
+
+            ctx.restore();
+        }
+
+        function drawGraphs() {
+            const w = graphCanvas.width;
+            const h = graphCanvas.height;
+            graphCtx.clearRect(0, 0, w, h);
+
+            graphCtx.beginPath();
+            graphCtx.strokeStyle = '#0f0';
+            pitchHistory.forEach((val, i) => {
+                const y = h / 2 - val;
+                if (i === 0) graphCtx.moveTo(i, y);
+                else graphCtx.lineTo(i, y);
+            });
+            graphCtx.stroke();
+
+            graphCtx.beginPath();
+            graphCtx.strokeStyle = '#f0f';
+            rollHistory.forEach((val, i) => {
+                const y = h / 2 - val;
+                if (i === 0) graphCtx.moveTo(i, y);
+                else graphCtx.lineTo(i, y);
+            });
+            graphCtx.stroke();
+        }
+
+        function update(e) {
+            const rawYaw = (e.alpha ?? 0);
+            const rawPitch = (e.beta ?? 0);
+            const rawRoll = (e.gamma ?? 0);
+            filteredYaw = alpha * rawYaw + (1 - alpha) * filteredYaw;
+            filteredPitch = alpha * rawPitch + (1 - alpha) * filteredPitch;
+            filteredRoll = alpha * rawRoll + (1 - alpha) * filteredRoll;
+
+            const relYaw = ((filteredYaw - yawOffset + 360) % 360).toFixed(1);
+            const relPitch = (filteredPitch - pitchOffset).toFixed(1);
+            const relRoll = (filteredRoll - rollOffset).toFixed(1);
+
+            document.getElementById("yaw").textContent = relYaw;
+            document.getElementById("pitch").textContent = relPitch;
+            document.getElementById("roll").textContent = relRoll;
+
+            pitchHistory.push(parseFloat(relPitch));
+            rollHistory.push(parseFloat(relRoll));
+            if (pitchHistory.length > graphCanvas.width) pitchHistory.shift();
+            if (rollHistory.length > graphCanvas.width) rollHistory.shift();
+
+            drawHUD(parseFloat(relRoll), parseFloat(relPitch), parseFloat(relYaw));
+            drawGraphs();
+
+            if (marker && marker.getLatLng) {
+                const {
+                    lat,
+                    lng
+                } = marker.getLatLng();
+                updateMap(lat, lng, parseFloat(relYaw));
+            }
+        }
+
+        function updateGPS(position) {
+            const coords = position.coords;
+            const lat = coords.latitude.toFixed(5);
+            const lon = coords.longitude.toFixed(5);
+            const speed = coords.speed != null ? (coords.speed * 3.6).toFixed(1) : 0;
+            document.getElementById("speed").textContent = speed;
+            document.getElementById("coords").textContent = `${lat}, ${lon}`;
+            updateMap(coords.latitude, coords.longitude, filteredYaw);
+        }
+
+        if (navigator.geolocation) {
+            navigator.geolocation.watchPosition(updateGPS);
+        }
+
+        if (typeof DeviceOrientationEvent !== "undefined" && typeof DeviceOrientationEvent.requestPermission === "function") {
+            const btn = document.createElement("button");
+            btn.innerText = "센서 허용";
+            btn.style.position = "absolute";
+            btn.style.top = "50%";
+            btn.style.left = "50%";
+            btn.style.transform = "translate(-50%, -50%)";
+            btn.style.zIndex = "999";
+            btn.onclick = () => {
+                DeviceOrientationEvent.requestPermission().then(resp => {
+                    if (resp === "granted") {
+                        window.addEventListener("deviceorientation", update);
+                        btn.remove();
+                    }
+                });
+            };
+            document.body.appendChild(btn);
+        } else {
+            window.addEventListener("deviceorientation", update);
+        }
+    </script>
 </body>
+
 </html>
