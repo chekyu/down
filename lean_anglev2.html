@@ -2,86 +2,141 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
-  <title>기기 자세 측정기 (초기화 포함)</title>
+  <title>HUD 스타일 자세계</title>
   <style>
-    body {
-      background: #000;
-      color: #0f0;
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: black;
+      overflow: hidden;
+      height: 100vh;
+      width: 100vw;
       font-family: monospace;
-      font-size: 1.4rem;
-      padding: 2rem;
+      color: #0f0;
     }
-    h1 {
-      color: #fff;
-      font-size: 2rem;
+    #hudCanvas {
+      position: absolute;
+      top: 0;
+      left: 0;
     }
-    .angle {
-      margin: 1rem 0;
+    #info {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      background: rgba(0,0,0,0.5);
+      padding: 10px;
+      border-radius: 5px;
+      z-index: 10;
     }
     button {
-      margin-top: 2rem;
-      padding: 1rem 2rem;
+      margin-top: 10px;
+      padding: 8px 15px;
       font-size: 1rem;
       cursor: pointer;
     }
   </style>
 </head>
 <body>
-  <h1>Roll / Pitch / Yaw 측정기</h1>
-  <div class="angle">Yaw (alpha): <span id="yaw">0</span>°</div>
-  <div class="angle">Pitch (beta): <span id="pitch">0</span>°</div>
-  <div class="angle">Roll (gamma): <span id="roll">0</span>°</div>
-  <button id="resetBtn">현재 자세를 기준으로 초기화</button>
+  <canvas id="hudCanvas"></canvas>
+  <div id="info">
+    <div>Yaw: <span id="yaw">0</span>°</div>
+    <div>Pitch: <span id="pitch">0</span>°</div>
+    <div>Roll: <span id="roll">0</span>°</div>
+    <button onclick="resetReference()">초기화</button>
+  </div>
 
   <script>
+    const canvas = document.getElementById("hudCanvas");
+    const ctx = canvas.getContext("2d");
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
     let yawOffset = 0, pitchOffset = 0, rollOffset = 0;
-    let lastAlpha = 0, lastBeta = 0, lastGamma = 0;
-
-    function updateAngles(event) {
-      const alpha = event.alpha ?? 0;  // Yaw
-      const beta = event.beta ?? 0;    // Pitch
-      const gamma = event.gamma ?? 0;  // Roll
-
-      lastAlpha = alpha;
-      lastBeta = beta;
-      lastGamma = gamma;
-
-      const yaw = ((alpha - yawOffset + 360) % 360).toFixed(1);
-      const pitch = (beta - pitchOffset).toFixed(1);
-      const roll = (gamma - rollOffset).toFixed(1);
-
-      document.getElementById('yaw').textContent = yaw;
-      document.getElementById('pitch').textContent = pitch;
-      document.getElementById('roll').textContent = roll;
-    }
+    let lastYaw = 0, lastPitch = 0, lastRoll = 0;
 
     function resetReference() {
-      yawOffset = lastAlpha;
-      pitchOffset = lastBeta;
-      rollOffset = lastGamma;
+      yawOffset = lastYaw;
+      pitchOffset = lastPitch;
+      rollOffset = lastRoll;
     }
 
-    // 초기화 버튼
-    document.getElementById('resetBtn').addEventListener('click', resetReference);
+    function drawHUD(roll, pitch) {
+      const w = canvas.width;
+      const h = canvas.height;
+      ctx.clearRect(0, 0, w, h);
 
-    // iOS 권한 요청
-    if (typeof DeviceOrientationEvent !== 'undefined' &&
-        typeof DeviceOrientationEvent.requestPermission === 'function') {
-      const permissionButton = document.createElement('button');
-      permissionButton.innerText = '센서 접근 허용 (iOS)';
-      permissionButton.style.padding = '1rem';
-      permissionButton.onclick = () => {
-        DeviceOrientationEvent.requestPermission().then(response => {
-          if (response === 'granted') {
-            window.addEventListener('deviceorientation', updateAngles);
-            permissionButton.remove();
+      ctx.save();
+      ctx.translate(w / 2, h / 2);
+      ctx.rotate((roll * Math.PI) / 180); // Roll 회전
+
+      // 수평선 (Pitch 이동)
+      const pitchY = pitch * 2; // pitch 계수 조절
+      ctx.strokeStyle = "#0f0";
+      ctx.lineWidth = 2;
+
+      ctx.beginPath();
+      ctx.moveTo(-100, pitchY);
+      ctx.lineTo(100, pitchY);
+      ctx.stroke();
+
+      // 십자선
+      ctx.beginPath();
+      ctx.moveTo(-10, 0);
+      ctx.lineTo(10, 0);
+      ctx.moveTo(0, -10);
+      ctx.lineTo(0, 10);
+      ctx.stroke();
+
+      ctx.restore();
+    }
+
+    function updateOrientation(e) {
+      const yaw = (e.alpha ?? 0);
+      const pitch = (e.beta ?? 0);
+      const roll = (e.gamma ?? 0);
+
+      lastYaw = yaw;
+      lastPitch = pitch;
+      lastRoll = roll;
+
+      const relativeYaw = ((yaw - yawOffset + 360) % 360).toFixed(1);
+      const relativePitch = (pitch - pitchOffset).toFixed(1);
+      const relativeRoll = (roll - rollOffset).toFixed(1);
+
+      document.getElementById("yaw").textContent = relativeYaw;
+      document.getElementById("pitch").textContent = relativePitch;
+      document.getElementById("roll").textContent = relativeRoll;
+
+      drawHUD(parseFloat(relativeRoll), parseFloat(relativePitch));
+    }
+
+    // iOS용 권한 요청
+    if (typeof DeviceOrientationEvent !== "undefined" &&
+        typeof DeviceOrientationEvent.requestPermission === "function") {
+      const btn = document.createElement("button");
+      btn.innerText = "센서 사용 허용";
+      btn.style.position = "absolute";
+      btn.style.top = "50%";
+      btn.style.left = "50%";
+      btn.style.transform = "translate(-50%, -50%)";
+      btn.style.padding = "1rem";
+      btn.onclick = () => {
+        DeviceOrientationEvent.requestPermission().then(resp => {
+          if (resp === "granted") {
+            window.addEventListener("deviceorientation", updateOrientation);
+            btn.remove();
           }
-        }).catch(console.error);
+        });
       };
-      document.body.appendChild(permissionButton);
+      document.body.appendChild(btn);
     } else {
-      window.addEventListener('deviceorientation', updateAngles);
+      window.addEventListener("deviceorientation", updateOrientation);
     }
+
+    window.addEventListener("resize", () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    });
   </script>
 </body>
 </html>
