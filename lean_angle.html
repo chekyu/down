@@ -99,13 +99,15 @@
         <div>최대 좌측 기울기: <span id="maxLeft">0.0</span>&deg;</div>
         <div>최대 우측 기울기: <span id="maxRight">0.0</span>&deg;</div>
         <div>
-          X축 : <span id="gamma">0</span> &deg;
-          Z축 : <span id="alpha">0</span> &deg;
-          Y축 : <span id="beta">0</span> &deg;
+          gamma : <span id="gamma">0</span> &deg;
+          beta : <span id="beta">0</span> &deg;
+          alpha : <span id="alpha">0</span> &deg;
         </div>
     </div>
-    <button id="reinitBtn" onclick="reinitSensor()">센서 초기화</button>
-    <button id="resetBtn" onclick="resetMax()">최대값 초기화</button>
+    <button id="reinitBtn" onclick="reinitSensor()">초기화</button>
+    <button id="resetBtn" onclick="resetMax()">
+      <span id="offset">활성</span>
+    </button>
     <div id="logList"></div>
 
     <script>
@@ -207,9 +209,9 @@
             const gamma = (event.gamma || 0) - offset.gamma;
             const alpha = (event.alpha || 0) - offset.alpha;
 
-            document.getElementById('gamma').textContent = gamma.toFixed(1);
-            document.getElementById('beta').textContent = beta.toFixed(1);
-            document.getElementById('alpha').textContent = alpha.toFixed(1);
+            document.getElementById('gamma').textContent = event.gamma.toFixed(1);
+            document.getElementById('beta').textContent = event.beta.toFixed(1);
+            document.getElementById('alpha').textContent = event.alpha.toFixed(1);
 
             let totalAngle = Math.sqrt(gamma * gamma + beta * beta); // 수평면 기준의 전체 기울기 크기
             document.getElementById('totalAngle').textContent = totalAngle.toFixed(1);
