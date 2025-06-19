@@ -300,12 +300,13 @@
             if (pitchHistory.length > graphCanvas.width) pitchHistory.shift();
             if (rollHistory.length > graphCanvas.width) rollHistory.shift();
 
-            if (relRoll < 0 && Math.abs(relRoll) > maxLeftLean) {
-                maxLeftLean = Math.abs(relRoll);
+            if (parseFloat(relRoll) < 0 && Math.abs(parseFloat(relRoll)) > maxLeftLean) {
+                maxLeftLean = Math.abs(parseFloat(relRoll));
                 document.getElementById('maxLeft').textContent = maxLeftLean.toFixed(1);
             }
-            if (relRoll > 0 && relRoll > maxRightLean) {
-                maxRightLean = relRoll;
+
+            if (parseFloat(relRoll) > 0 && parseFloat(relRoll) > maxRightLean) {
+                maxRightLean = parseFloat(relRoll);
                 document.getElementById('maxRight').textContent = maxRightLean.toFixed(1);
             }
 
