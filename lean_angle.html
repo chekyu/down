@@ -206,15 +206,16 @@
         }
 
         function handleOrientation(event) {
-            const gamma = (event.gamma || 0) - offset.gamma;
             const beta = (event.beta || 0) - offset.beta;
+            const gamma = (event.gamma || 0) - offset.gamma;
             const alpha = (event.alpha || 0) - offset.alpha;
 
-            document.getElementById('gamma').textContent = gamma;
-            document.getElementById('beta').textContent = beta;
-            document.getElementById('alpha').textContent = alpha;
+            document.getElementById('gamma').textContent = gamma.toFixed(1);
+            document.getElementById('beta').textContent = beta.toFixed(1);
+            document.getElementById('alpha').textContent = alpha.toFixed(1);
 
-            const lean = parseFloat(gamma.toFixed(1));
+            //const lean = parseFloat(gamma.toFixed(1));
+            const lean Math.atan2(gamma, Math.sqrt(beta * beta + alpha * alpha)) * (180 / Math.PI);
             document.getElementById('currentLean').textContent = lean.toFixed(1);
 
             const now = Date.now();
