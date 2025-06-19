@@ -151,14 +151,6 @@
       rollOffset = filteredRoll;
     }
 
-    function getDirectionText(yaw) {
-      const d = Math.round(yaw);
-      if (d >= 45 && d < 135) return "E";
-      if (d >= 135 && d < 225) return "S";
-      if (d >= 225 && d < 315) return "W";
-      return "N";
-    }
-
     function drawHUD(roll, pitch, yaw) {
       const w = canvas.width;
       const h = canvas.height;
@@ -245,8 +237,7 @@
       document.getElementById("yaw").textContent = relYaw;
       document.getElementById("pitch").textContent = relPitch;
       document.getElementById("roll").textContent = relRoll;
-      document.getElementById("direction").textContent = getDirectionText(parseFloat(relYaw));
-
+      
       pitchHistory.push(parseFloat(relPitch));
       rollHistory.push(parseFloat(relRoll));
       if (pitchHistory.length > graphCanvas.width) pitchHistory.shift();
