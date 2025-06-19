@@ -1,137 +1,62 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>모터사이클 Lean HUD</title>
+  <meta charset="UTF-8">
+  <title>Roll / Pitch / Yaw 표시</title>
   <style>
     body {
-      background: black;
-      margin: 0;
-      overflow: hidden;
-      font-family: sans-serif;
-    }
-    canvas {
-      display: block;
-    }
-    #hud {
-      position: absolute;
-      top: 10px;
-      left: 10px;
+      background: #111;
       color: #0f0;
-      font-size: 1rem;
-      background: rgba(0,0,0,0.5);
-      padding: 10px;
-      border-radius: 6px;
+      font-family: monospace;
+      font-size: 1.5rem;
+      padding: 2rem;
     }
-    #resetBtn {
-      position: absolute;
-      top: 10px;
-      right: 10px;
-      padding: 10px 15px;
-      font-size: 1rem;
-      background: #0f0;
-      color: black;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
+    h1 {
+      font-size: 2rem;
+      color: #fff;
+    }
+    .angle {
+      margin: 1rem 0;
     }
   </style>
 </head>
 <body>
-  <canvas id="hudCanvas"></canvas>
-  <div id="hud">
-    최대 기울기: <span id="max">0.0</span>&deg;
-  </div>
-  <button id="resetBtn" onclick="resetMax()">최대값 초기화</button>
+  <h1>Device Orientation</h1>
+  <div class="angle">Yaw (alpha): <span id="yaw">0</span>°</div>
+  <div class="angle">Pitch (beta): <span id="pitch">0</span>°</div>
+  <div class="angle">Roll (gamma): <span id="roll">0</span>°</div>
 
   <script>
-    const canvas = document.getElementById('hudCanvas');
-    const ctx = canvas.getContext('2d');
-    let maxLean = 0;
+    function updateAngles(event) {
+      const yaw = event.alpha ?? 0;   // Z축 회전 (방향)
+      const pitch = event.beta ?? 0;  // X축 회전 (앞뒤)
+      const roll = event.gamma ?? 0;  // Y축 회전 (좌우)
 
-    function resizeCanvas() {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
+      document.getElementById('yaw').textContent = yaw.toFixed(1);
+      document.getElementById('pitch').textContent = pitch.toFixed(1);
+      document.getElementById('roll').textContent = roll.toFixed(1);
     }
 
-    window.addEventListener('resize', resizeCanvas);
-    resizeCanvas();
-
-    function drawHUD(angle) {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-      const centerX = canvas.width / 2;
-      const centerY = canvas.height / 2;
-
-      // 기준선
-      ctx.strokeStyle = '#0f0';
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.moveTo(centerX - 100, centerY);
-      ctx.lineTo(centerX + 100, centerY);
-      ctx.stroke();
-
-      // 수평선 (기울기 반영)
-      ctx.save();
-      ctx.translate(centerX, centerY);
-      ctx.rotate(-angle * Math.PI / 180);
-      ctx.strokeStyle = '#0ff';
-      ctx.lineWidth = 4;
-      ctx.beginPath();
-      ctx.moveTo(-150, 0);
-      ctx.lineTo(150, 0);
-      ctx.stroke();
-      ctx.restore();
-
-      // 중앙 마커
-      ctx.fillStyle = '#f00';
-      ctx.beginPath();
-      ctx.arc(centerX, centerY, 6, 0, 2 * Math.PI);
-      ctx.fill();
-    }
-
-    function handleOrientation(event) {
-      const gamma = event.gamma || 0;
-      const lean = parseFloat(gamma.toFixed(1));
-      const absLean = Math.abs(lean);
-
-      if (absLean > maxLean) {
-        maxLean = absLean;
-        document.getElementById('max').textContent = maxLean.toFixed(1);
-        localStorage.setItem('maxLean', maxLean);
-      }
-
-      drawHUD(lean);
-    }
-
-    function resetMax() {
-      maxLean = 0;
-      document.getElementById('max').textContent = '0.0';
-      localStorage.removeItem('maxLean');
-    }
-
-    function initSensor() {
-      const stored = localStorage.getItem('maxLean');
-      if (stored) {
-        maxLean = parseFloat(stored);
-        document.getElementById('max').textContent = maxLean.toFixed(1);
-      }
-
-      if (typeof DeviceOrientationEvent.requestPermission === 'function') {
+    // iOS 13+의 권한 요청 처리
+    if (typeof DeviceOrientationEvent !== 'undefined' &&
+        typeof DeviceOrientationEvent.requestPermission === 'function') {
+      // iOS
+      const button = document.createElement('button');
+      button.innerText = '센서 사용 허용';
+      button.style.padding = '1rem';
+      button.onclick = () => {
         DeviceOrientationEvent.requestPermission().then(response => {
           if (response === 'granted') {
-            window.addEventListener('deviceorientation', handleOrientation);
-          } else {
-            alert('센서 권한이 거부되었습니다.');
+            window.addEventListener('deviceorientation', updateAngles);
+            button.remove();
           }
-        });
-      } else {
-        window.addEventListener('deviceorientation', handleOrientation);
-      }
+        }).catch(console.error);
+      };
+      document.body.appendChild(button);
+    } else {
+      // Android or iOS 12 이하
+      window.addEventListener('deviceorientation', updateAngles);
     }
-
-    window.onload = initSensor;
   </script>
 </body>
 </html>

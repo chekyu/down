@@ -99,14 +99,14 @@
         <div>최대 좌측 기울기: <span id="maxLeft">0.0</span>&deg;</div>
         <div>최대 우측 기울기: <span id="maxRight">0.0</span>&deg;</div>
         <div>
-          gamma : <span id="gamma">0</span> &deg;
-          beta : <span id="beta">0</span> &deg;
-          alpha : <span id="alpha">0</span> &deg;
+            gamma : <span id="gamma">0</span> &deg;
+            beta : <span id="beta">0</span> &deg;
+            alpha : <span id="alpha">0</span> &deg;
         </div>
     </div>
     <button id="reinitBtn" onclick="reinitSensor()">초기화</button>
     <button id="resetBtn" onclick="resetMax()">
-      <span id="offset">활성</span>
+        <span id="offset">활성</span>
     </button>
     <div id="logList"></div>
 
@@ -174,9 +174,9 @@
                     ctx.textAlign = "center";
                     if (Math.abs(deg) > 50) {
                         ctx.fillStyle = "#ff0000";
-                    } else if(deg != 0) {
+                    } else if (deg != 0) {
                         ctx.fillStyle = "#0000ff";
-                    } 
+                    }
                     ctx.fillText(Math.abs(deg).toString(), textX, textY + 4);
                 }
             }
@@ -186,14 +186,14 @@
             ctx.translate(centerX, centerY); // 중심점으로 이동
             ctx.rotate(angle * Math.PI / 180); // lean 값만큼 회전
 
-            ctx.strokeStyle = '#ffff00';  // 노란색 바늘
+            ctx.strokeStyle = '#ffff00'; // 노란색 바늘
             ctx.lineWidth = 3;
             ctx.beginPath();
-            ctx.moveTo(0, 0);           // 기준점에서 시작
+            ctx.moveTo(0, 0); // 기준점에서 시작
             ctx.lineTo(0, -radius + 40); // 위쪽으로 길게 뻗는 바늘
             ctx.stroke();
 
-            ctx.restore();          
+            ctx.restore();
         }
 
         function appendLog(direction, angle) {
@@ -218,7 +218,7 @@
 
             const lean = parseFloat(gamma.toFixed(1));
             // const lean = Math.atan2(gamma, Math.sqrt(beta * beta + alpha * alpha)) * (180 / Math.PI);
-            
+
             const now = Date.now();
             if (Math.abs(lean) > 5) {
                 if (!leanStartTime) leanStartTime = now;
@@ -242,43 +242,6 @@
                 // appendLog('우측', maxRightLean);
             }
             drawHUD(totalAngle);
-        }
-
-        function resetMax() {
-            maxLeftLean = 0;
-            maxRightLean = 0;
-            leanStartTime = null;
-            document.getElementById('maxLeft').textContent = '0.0';
-            document.getElementById('maxRight').textContent = '0.0';
-            document.getElementById('currentLean').textContent = '0.0';
-            document.getElementById('duration').textContent = '0.0';
-            localStorage.removeItem('maxLeftLean');
-            localStorage.removeItem('maxRightLean');
-            document.getElementById('logList').innerHTML = '';
-            window.removeEventListener('deviceorientation', handleOrientation);
-            setOffsetFromCurrent(() => {
-                window.addEventListener('deviceorientation', handleOrientation);
-            });
-        }
-
-        function setOffsetFromCurrent(callback) {
-            const captureOffset = (event) => {
-                offset.alpha = event.alpha || 0;
-                offset.beta = event.beta || 0;
-                offset.gamma = event.gamma || 0;
-                window.removeEventListener('deviceorientation', captureOffset);
-                if (callback) callback();
-            };
-            window.addEventListener('deviceorientation', captureOffset, {
-                once: true
-            });
-        }
-
-        function reinitSensor() {
-            window.removeEventListener('deviceorientation', handleOrientation);
-            setOffsetFromCurrent(() => {
-                window.addEventListener('deviceorientation', handleOrientation);
-            });
         }
 
         function updateGPS(position) {
@@ -313,6 +276,44 @@
             } else {
                 window.addEventListener('deviceorientation', handleOrientation);
             }
+        }
+
+            function setOffsetFromCurrent(callback) {
+            const captureOffset = (event) => {
+                offset.alpha = event.alpha || 0;
+                offset.beta = event.beta || 0;
+                offset.gamma = event.gamma || 0;
+                window.removeEventListener('deviceorientation', captureOffset);
+                if (callback) callback();
+            };
+            window.addEventListener('deviceorientation', captureOffset, {
+                once: true
+            });
+        }
+
+
+        function reinitSensor() {
+            window.removeEventListener('deviceorientation', handleOrientation);
+            setOffsetFromCurrent(() => {
+                window.addEventListener('deviceorientation', handleOrientation);
+            });
+        }
+
+        function resetMax() {
+            maxLeftLean = 0;
+            maxRightLean = 0;
+            leanStartTime = null;
+            localStorage.removeItem('maxLeftLean');
+            localStorage.removeItem('maxRightLean');
+            document.getElementById('maxLeft').textContent = '0.0';
+            document.getElementById('maxRight').textContent = '0.0';
+            document.getElementById('currentLean').textContent = '0.0';
+            document.getElementById('duration').textContent = '0.0';
+            document.getElementById('logList').innerHTML = '';
+            window.removeEventListener('deviceorientation', handleOrientation);
+            setOffsetFromCurrent(() => {
+                window.addEventListener('deviceorientation', handleOrientation);
+            });
         }
 
         window.onload = initSensor;
