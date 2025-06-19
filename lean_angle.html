@@ -232,13 +232,13 @@
                 maxLeftLean = Math.abs(lean);
                 document.getElementById('maxLeft').textContent = maxLeftLean.toFixed(1);
                 localStorage.setItem('maxLeftLean', maxLeftLean);
-                appendLog('좌측', maxLeftLean);
+                // appendLog('좌측', maxLeftLean);
             }
             if (lean > 0 && lean > maxRightLean) {
                 maxRightLean = lean;
                 document.getElementById('maxRight').textContent = maxRightLean.toFixed(1);
                 localStorage.setItem('maxRightLean', maxRightLean);
-                appendLog('우측', maxRightLean);
+                // appendLog('우측', maxRightLean);
             }
             drawHUD(lean);
         }
