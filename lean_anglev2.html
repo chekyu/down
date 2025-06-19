@@ -42,6 +42,25 @@
       transform: translateX(-50%);
       z-index: 10;
     }
+    #status {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: rgba(0, 0, 0, 0.6);
+      padding: 10px;
+      border-radius: 8px;
+      z-index: 10;
+      color: #fff;
+      font-size: 0.9rem;
+      text-align: right;
+    }
+    #graphCanvas {
+      position: absolute;
+      bottom: 80px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 5;
+    }
     button {
       padding: 10px 25px;
       font-size: 1rem;
@@ -58,24 +77,35 @@
   </style>
 </head>
 <body>
-  <canvas id="hud" width="800" height="600"></canvas>
+  <canvas id="hud"></canvas>
+  <canvas id="graphCanvas" width="400" height="80"></canvas>
+
   <div id="info">
     <div>Yaw: <span id="yaw">0</span>° (<span id="direction">-</span>)</div>
     <div>Pitch: <span id="pitch">0</span>°</div>
     <div>Roll: <span id="roll">0</span>°</div>
   </div>
+  <div id="status">
+    속도: <span id="speed">0</span> km/h<br>
+    위치: <span id="coords">-</span>
+  </div>
   <div id="controls">
     <button onclick="resetReference()">RESET</button>
   </div>
+
   <script>
     const canvas = document.getElementById('hud');
     const ctx = canvas.getContext('2d');
+    const graphCanvas = document.getElementById('graphCanvas');
+    const graphCtx = graphCanvas.getContext('2d');
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
 
     let yawOffset = 0, pitchOffset = 0, rollOffset = 0;
     let filteredYaw = 0, filteredPitch = 0, filteredRoll = 0;
     const alpha = 0.1;
+
+    const pitchHistory = [], rollHistory = [];
 
     function resetReference() {
       yawOffset = filteredYaw;
@@ -98,14 +128,12 @@
       ctx.save();
       ctx.translate(w / 2, h / 2);
 
-      // Roll 아크
       ctx.beginPath();
       ctx.strokeStyle = '#0ff';
       ctx.lineWidth = 3;
       ctx.arc(0, 0, 120, -Math.PI / 2 - roll * Math.PI / 180, -Math.PI / 2);
       ctx.stroke();
 
-      // Pitch 라인
       ctx.strokeStyle = '#0f0';
       for (let i = -90; i <= 90; i += 10) {
         const y = (pitch - i) * 2;
@@ -115,7 +143,6 @@
         ctx.stroke();
       }
 
-      // 중앙 십자선
       ctx.strokeStyle = '#fff';
       ctx.beginPath();
       ctx.moveTo(-15, 0);
@@ -124,7 +151,6 @@
       ctx.lineTo(0, 15);
       ctx.stroke();
 
-      // Yaw 나침반 링
       ctx.rotate(-yaw * Math.PI / 180);
       ctx.strokeStyle = '#ff0';
       ctx.beginPath();
@@ -140,6 +166,32 @@
       });
 
       ctx.restore();
+    }
+
+    function drawGraphs() {
+      const w = graphCanvas.width;
+      const h = graphCanvas.height;
+      graphCtx.clearRect(0, 0, w, h);
+
+      // Pitch
+      graphCtx.beginPath();
+      graphCtx.strokeStyle = '#0f0';
+      pitchHistory.forEach((val, i) => {
+        const y = h / 2 - val;
+        if (i === 0) graphCtx.moveTo(i, y);
+        else graphCtx.lineTo(i, y);
+      });
+      graphCtx.stroke();
+
+      // Roll
+      graphCtx.beginPath();
+      graphCtx.strokeStyle = '#f0f';
+      rollHistory.forEach((val, i) => {
+        const y = h / 2 - val;
+        if (i === 0) graphCtx.moveTo(i, y);
+        else graphCtx.lineTo(i, y);
+      });
+      graphCtx.stroke();
     }
 
     function update(e) {
@@ -159,7 +211,26 @@
       document.getElementById("roll").textContent = relRoll;
       document.getElementById("direction").textContent = getDirectionText(parseFloat(relYaw));
 
+      pitchHistory.push(parseFloat(relPitch));
+      rollHistory.push(parseFloat(relRoll));
+      if (pitchHistory.length > graphCanvas.width) pitchHistory.shift();
+      if (rollHistory.length > graphCanvas.width) rollHistory.shift();
+
       drawHUD(parseFloat(relRoll), parseFloat(relPitch), parseFloat(relYaw));
+      drawGraphs();
+    }
+
+    function updateGPS(position) {
+      const coords = position.coords;
+      const lat = coords.latitude.toFixed(5);
+      const lon = coords.longitude.toFixed(5);
+      const speed = coords.speed != null ? (coords.speed * 3.6).toFixed(1) : 0;
+      document.getElementById("speed").textContent = speed;
+      document.getElementById("coords").textContent = `${lat}, ${lon}`;
+    }
+
+    if (navigator.geolocation) {
+      navigator.geolocation.watchPosition(updateGPS);
     }
 
     if (typeof DeviceOrientationEvent !== "undefined" && typeof DeviceOrientationEvent.requestPermission === "function") {
