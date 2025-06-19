@@ -301,14 +301,10 @@
             if (relRoll < 0 && Math.abs(relRoll) > maxLeftLean) {
                 maxLeftLean = Math.abs(lean);
                 document.getElementById('maxLeft').textContent = maxLeftLean.toFixed(1);
-                localStorage.setItem('maxLeftLean', maxLeftLean);
-                // appendLog('좌측', maxLeftLean);
             }
             if (relRoll > 0 && relRoll > maxRightLean) {
                 maxRightLean = relRoll;
                 document.getElementById('maxRight').textContent = maxRightLean.toFixed(1);
-                localStorage.setItem('maxRightLean', maxRightLean);
-                // appendLog('우측', maxRightLean);
             }
 
             drawHUD(parseFloat(relRoll), parseFloat(relPitch), parseFloat(relYaw));
