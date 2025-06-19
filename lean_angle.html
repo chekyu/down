@@ -116,64 +116,65 @@
             beta: 0,
             gamma: 0
         };
-
-        const centerX = canvas.width / 2;
-        const centerY = canvas.height - 20;
         const radius = 280;
-
-        // 반원 외곽 그리기
-        ctx.beginPath();
-        ctx.arc(centerX, centerY, radius, Math.PI, 0, false);
-        ctx.strokeStyle = "#fff";
-        ctx.lineWidth = 2;
-        ctx.stroke();
-
-        // 중심점
-        ctx.beginPath();
-        ctx.arc(centerX, centerY, 3, 0, 2 * Math.PI);
-        ctx.fill();
-
-        // 각도 눈금 및 숫자 표시
-        for (let deg = 0; deg <= 180; deg++) {
-            const rad = deg * Math.PI / 180;
-            const outerX = centerX + radius * Math.cos(Math.PI - rad);
-            const outerY = centerY - radius * Math.sin(rad);
-
-            const innerLength = (deg % 10 === 0) ? 20 : (deg % 5 === 0 ? 10 : 5);
-            const innerX = centerX + (radius - innerLength) * Math.cos(Math.PI - rad);
-            const innerY = centerY - (radius - innerLength) * Math.sin(rad);
-
-            ctx.beginPath();
-            ctx.moveTo(outerX, outerY);
-            ctx.lineTo(innerX, innerY);
-            ctx.strokeStyle = "#333";
-            ctx.lineWidth = (deg % 10 === 0) ? 1.5 : 1;
-            ctx.stroke();
-
-            // 숫자 표시 (10도 단위)
-            if (deg % 10 === 0) {
-                const textX = centerX + (radius - 30) * Math.cos(Math.PI - rad);
-                const textY = centerY - (radius - 30) * Math.sin(rad);
-                ctx.font = "12px sans-serif";
-                ctx.fillStyle = "#fff";
-                ctx.textAlign = "center";
-                ctx.fillText(deg.toString(), textX, textY + 4);
-            }
-        }
 
         function resizeCanvas() {
             canvas.width = window.innerWidth;
             canvas.height = window.innerHeight;
         }
-
         window.addEventListener('resize', resizeCanvas);
         window.addEventListener('orientationchange', resizeCanvas);
         resizeCanvas();
+        drawHUD(0);
 
         function drawHUD(angle) {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             const centerX = canvas.width / 2;
             const centerY = canvas.height / 2;
+
+            // 반원 그리기 (위로 열린 반원)
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, radius, Math.PI, 0, false); // 180도
+            ctx.strokeStyle = "#fff";
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            // 중심점
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, 3, 0, 2 * Math.PI);
+            ctx.fill();
+
+            // 눈금 그리기 (-90 ~ 90도)
+            for (let deg = -90; deg <= 90; deg++) {
+                const rad = (deg) * Math.PI / 180;
+
+                const outerX = centerX + radius * Math.sin(rad); // sin으로 수평
+                const outerY = centerY - radius * Math.cos(rad); // cos으로 수직
+
+                const len = deg % 10 === 0 ? 20 : deg % 5 === 0 ? 10 : 5;
+                const innerX = centerX + (radius - len) * Math.sin(rad);
+                const innerY = centerY - (radius - len) * Math.cos(rad);
+
+                ctx.beginPath();
+                ctx.moveTo(outerX, outerY);
+                ctx.lineTo(innerX, innerY);
+                ctx.strokeStyle = "#fff";
+                ctx.lineWidth = deg % 10 === 0 ? 1.5 : 1;
+                ctx.stroke();
+
+                // 숫자 표시
+                if (deg % 10 === 0) {
+                    const textX = centerX + (radius - 35) * Math.sin(rad);
+                    const textY = centerY - (radius - 35) * Math.cos(rad);
+                    ctx.font = "12px sans-serif";
+                    ctx.fillStyle = "#fff";
+                    ctx.textAlign = "center";
+                    if (deg != 0) {
+                        ctx.fillStyle = deg < 0 ? "#ff0000" : "#0000ff";
+                    }
+                    ctx.fillText(Math.abs(deg).toString(), textX, textY + 4);
+                }
+            }
 
             ctx.save();
             ctx.translate(centerX, centerY);
@@ -184,18 +185,8 @@
             ctx.moveTo(-150, 0);
             ctx.lineTo(150, 0);
             ctx.stroke();
-
-            for (let i = -30; i <= 30; i += 10) {
-                const y = i * 2;
-                ctx.beginPath();
-                ctx.moveTo(-10, y);
-                ctx.lineTo(10, y);
-                ctx.stroke();
-                ctx.fillStyle = '#00ff00';
-                ctx.fillText(i.toString(), 15, y + 4);
-            }
+            
             ctx.restore();
-
             ctx.fillStyle = '#00ff00';
             ctx.beginPath();
             ctx.moveTo(centerX, centerY + 10);
@@ -243,7 +234,7 @@
                 localStorage.setItem('maxRightLean', maxRightLean);
                 appendLog('우측', maxRightLean);
             }
-            /*drawHUD(lean);*/
+            drawHUD(lean);
         }
 
         function resetMax() {
