@@ -209,6 +209,10 @@
             const beta = (event.beta || 0) - offset.beta;
             const alpha = (event.alpha || 0) - offset.alpha;
 
+            document.getElementById('gamma').textContent = gamma;
+            document.getElementById('beta').textContent = beta;
+            document.getElementById('alpha').textContent = alpha;
+
             const lean = parseFloat(gamma.toFixed(1));
             document.getElementById('currentLean').textContent = lean.toFixed(1);
 
