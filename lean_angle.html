@@ -124,7 +124,7 @@
         // 반원 외곽 그리기
         ctx.beginPath();
         ctx.arc(centerX, centerY, radius, Math.PI, 0, false);
-        ctx.strokeStyle = "#000";
+        ctx.strokeStyle = "#fff";
         ctx.lineWidth = 2;
         ctx.stroke();
 
@@ -155,7 +155,7 @@
                 const textX = centerX + (radius - 30) * Math.cos(Math.PI - rad);
                 const textY = centerY - (radius - 30) * Math.sin(rad);
                 ctx.font = "12px sans-serif";
-                ctx.fillStyle = "#000";
+                ctx.fillStyle = "#fff";
                 ctx.textAlign = "center";
                 ctx.fillText(deg.toString(), textX, textY + 4);
             }
@@ -165,7 +165,7 @@
             canvas.width = window.innerWidth;
             canvas.height = window.innerHeight;
         }
-        
+
         window.addEventListener('resize', resizeCanvas);
         window.addEventListener('orientationchange', resizeCanvas);
         resizeCanvas();
