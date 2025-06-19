@@ -56,7 +56,6 @@
       border-radius: 8px;
       z-index: 2;
     }
-
     @media (orientation: portrait) {
       #hud {
         top: auto;
@@ -65,7 +64,7 @@
         font-size: 0.9rem;
       }
       #resetBtn {
-        top: 10px; 
+        top: 10px;
       }
       #reinitBtn {
         top: 10px;
@@ -77,10 +76,6 @@
   </style>
 </head>
 <body>
-  <div>
-    <button id="reinitBtn" onclick="reinitSensor()">센서 초기화</button>
-  <button id="resetBtn" onclick="resetMax()">최대값 초기화</button>
-  </div>
   <canvas id="hudCanvas"></canvas>
   <div id="hud">
     <div>SPD: <span id="spd">0</span> km/h</div>
@@ -90,7 +85,8 @@
     <div>최대 좌측 기울기: <span id="maxLeft">0.0</span>&deg;</div>
     <div>최대 우측 기울기: <span id="maxRight">0.0</span>&deg;</div>
   </div>
-  
+  <button id="reinitBtn" onclick="reinitSensor()">센서 초기화</button>
+  <button id="resetBtn" onclick="resetMax()">최대값 초기화</button>
   <div id="logList"></div>
 
   <script>
@@ -99,12 +95,12 @@
     let maxLeftLean = 0;
     let maxRightLean = 0;
     let leanStartTime = null;
+    let currentOffset = 0;
 
     function resizeCanvas() {
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
     }
-
     window.addEventListener('resize', resizeCanvas);
     window.addEventListener('orientationchange', resizeCanvas);
     resizeCanvas();
@@ -153,7 +149,8 @@
     }
 
     function handleOrientation(event) {
-      const gamma = event.gamma || 0;
+      const rawGamma = event.gamma || 0;
+      const gamma = rawGamma - currentOffset;
       const lean = parseFloat(gamma.toFixed(1));
       document.getElementById('currentLean').textContent = lean.toFixed(1);
 
@@ -186,6 +183,7 @@
       maxLeftLean = 0;
       maxRightLean = 0;
       leanStartTime = null;
+      currentOffset = 0;
       document.getElementById('maxLeft').textContent = '0.0';
       document.getElementById('maxRight').textContent = '0.0';
       document.getElementById('currentLean').textContent = '0.0';
@@ -197,7 +195,14 @@
 
     function reinitSensor() {
       window.removeEventListener('deviceorientation', handleOrientation);
-      initSensor();
+
+      const captureOffset = (event) => {
+        currentOffset = event.gamma || 0;
+        window.removeEventListener('deviceorientation', captureOffset);
+        window.addEventListener('deviceorientation', handleOrientation);
+      };
+
+      window.addEventListener('deviceorientation', captureOffset);
     }
 
     function updateGPS(position) {
