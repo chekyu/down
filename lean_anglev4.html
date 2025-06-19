@@ -299,7 +299,7 @@
             if (rollHistory.length > graphCanvas.width) rollHistory.shift();
 
             if (relRoll < 0 && Math.abs(relRoll) > maxLeftLean) {
-                maxLeftLean = Math.abs(lean);
+                maxLeftLean = Math.abs(relRoll);
                 document.getElementById('maxLeft').textContent = maxLeftLean.toFixed(1);
             }
             if (relRoll > 0 && relRoll > maxRightLean) {
