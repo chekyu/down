@@ -124,34 +124,13 @@
 
         let map, marker, markerIcon;
 
-    //     const svg = `
-    // <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="cyan">
-    //   <path d="M12 2L15 22L12 17L9 22L12 2Z"/>
-    // </svg>`;
-    //     const encodedSvg = encodeURIComponent(svg.trim());
-
-    //     markerIcon = L.divIcon({
-    //         className: '',
-    //         html: `<div id="headingMarker" style="
-    //   width: 24px;
-    //   height: 24px;
-    //   background: url('data:image/svg+xml;utf8,${encodedSvg}') no-repeat center;
-    //   background-size: contain;
-    // "></div>`,
-    //         iconSize: [24, 24],
-    //         iconAnchor: [12, 12]
-    //     });
-
         function initMap(lat, lon) {
             map = L.map('map').setView([lat, lon], 17);
             L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-                attribution: '&copy; OpenStreetMap contributors & CartoDB',
+                attribu`tion: '&copy; OpenStreetMap contributors & CartoDB',
                 subdomains: 'abcd',
                 maxZoom: 19
             }).addTo(map);
-            // marker = L.marker([lat, lon], {
-            //     icon: markerIcon
-            // }).addTo(map);
         }
 
         function updateMap(lat, lon, heading) {
