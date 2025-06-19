@@ -118,7 +118,8 @@
         let filteredYaw = 0,
             filteredPitch = 0,
             filteredRoll = 0;
-        let maxLeftLean = 0, maxRightLean = 0;
+        let maxLeftLean = 0,
+            maxRightLean = 0;
 
         const alpha = 0.1;
         const pitchHistory = [],
@@ -162,7 +163,7 @@
             canvas.height = window.innerHeight;
             backCanvas.width = window.innerWidth;
             backCanvas.height = window.innerHeight;
-            
+
             const centerX = backCanvas.width / 2;
             const centerY = backCanvas.height / 2;
             const radius = 150;
@@ -300,16 +301,17 @@
             if (pitchHistory.length > graphCanvas.width) pitchHistory.shift();
             if (rollHistory.length > graphCanvas.width) rollHistory.shift();
 
-            if (parseFloat(relRoll) < 0 && Math.abs(parseFloat(relRoll)) > maxLeftLean) {
-                maxLeftLean = Math.abs(parseFloat(relRoll));
+            const numRoll = parseFloat(relRoll);
+
+            if (numRoll < 0 && Math.abs(numRoll) > maxLeftLean) {
+                maxLeftLean = Math.abs(numRoll);
                 document.getElementById('maxLeft').textContent = maxLeftLean.toFixed(1);
             }
 
-            if (parseFloat(relRoll) > 0 && parseFloat(relRoll) > maxRightLean) {
-                maxRightLean = parseFloat(relRoll);
+            if (numRoll > 0 && numRoll > maxRightLean) {
+                maxRightLean = numRoll;
                 document.getElementById('maxRight').textContent = maxRightLean.toFixed(1);
             }
-
             drawHUD(parseFloat(relRoll), parseFloat(relPitch), parseFloat(relYaw));
             drawGraphs();
 
