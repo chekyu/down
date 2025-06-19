@@ -93,14 +93,16 @@
     <canvas id="hudCanvas"></canvas>
     <div id="hud">
         <div>SPD: <span id="spd">0</span> km/h</div>
-        <div>Z축 : <span id="alpha">0</span> &deg;</div>
-        <div>X축 : <span id="gamma">0</span> &deg;</div>
-        <div>Y축 : <span id="beta">0</span> &deg;</div>
         <div>기울기: <span id="totalAngle">0.0</span>&deg;</div>
         <div>기울기 유지시간: <span id="duration">0.0</span>초</div>
         <div>현재 좌우 기울기: <span id="currentLean">0.0</span>&deg;</div>
         <div>최대 좌측 기울기: <span id="maxLeft">0.0</span>&deg;</div>
         <div>최대 우측 기울기: <span id="maxRight">0.0</span>&deg;</div>
+        <div>
+          X축 : <span id="gamma">0</span> &deg;
+          Z축 : <span id="alpha">0</span> &deg;
+          Y축 : <span id="beta">0</span> &deg;
+        </div>
     </div>
     <button id="reinitBtn" onclick="reinitSensor()">센서 초기화</button>
     <button id="resetBtn" onclick="resetMax()">최대값 초기화</button>
@@ -189,8 +191,7 @@
             ctx.lineTo(0, -radius + 40); // 위쪽으로 길게 뻗는 바늘
             ctx.stroke();
 
-            ctx.restore();
-          
+            ctx.restore();          
         }
 
         function appendLog(direction, angle) {
@@ -238,7 +239,7 @@
                 localStorage.setItem('maxRightLean', maxRightLean);
                 // appendLog('우측', maxRightLean);
             }
-            drawHUD(lean);
+            drawHUD(totalAngle);
         }
 
         function resetMax() {
