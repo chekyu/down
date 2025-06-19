@@ -279,7 +279,7 @@
       btn.style.top = "50%";
       btn.style.left = "50%";
       btn.style.transform = "translate(-50%, -50%)";
-      btn.style.z-index = "999";
+      btn.style.zIndex = "999";
       btn.onclick = () => {
         DeviceOrientationEvent.requestPermission().then(resp => {
           if (resp === "granted") {
