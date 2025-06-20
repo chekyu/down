@@ -128,7 +128,7 @@
         <div hidden>Pitch: <span id="pitch">0</span>°</div>
         <div hidden>Roll: <span id="roll">0</span>°</div>
     </div>
-    <!--<div id="map"></div>-->
+    <div id="map"></div>
     <div id="navigator">
         <button onclick="resetReference()">RESET</button>
     </div>
@@ -384,7 +384,7 @@
             const lat = coords.latitude.toFixed(5);
             const lon = coords.longitude.toFixed(5);
             const speed = coords.speed != null ? (coords.speed * 3.6).toFixed(0) : 0;
-            document.getElementById("speed").textContent = coords.speed;
+            document.getElementById("speed").textContent = speed;
             updateMap(coords.latitude, coords.longitude, filteredYaw);
         }
 
