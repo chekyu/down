@@ -321,8 +321,8 @@
             graphCtx.strokeStyle = '#0f0';
             pitchHistory.forEach((val, i) => {
                 const y = (h / 2 - val) / 2;
-                if (i === 0) graphCtx.moveTo(i, y);
-                else graphCtx.lineTo(i, y);
+                if (i === 0) graphCtx.moveTo(i / 2, y);
+                else graphCtx.lineTo(i / 2, y);
             });
             graphCtx.stroke();
 
@@ -330,8 +330,8 @@
             graphCtx.strokeStyle = '#f0f';
             rollHistory.forEach((val, i) => {
                 const y = (h / 2 - val) / 2;
-                if (i === 0) graphCtx.moveTo(i, y);
-                else graphCtx.lineTo(i, y);
+                if (i === 0) graphCtx.moveTo(i / 2, y);
+                else graphCtx.lineTo(i / 2, y);
             });
             graphCtx.stroke();
         }
