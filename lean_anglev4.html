@@ -52,6 +52,30 @@
             text-align: right;
         }
 
+        #topNavi {
+            color: #fff;  
+            font-size: 2rem;
+            width: 100%;
+            padding: 20px;
+               #speedCenter {
+            position: absolute;
+            width: 100%;
+            text-align: center;
+        }
+
+        #leanMaxLeft {
+            position: absolute;
+            width: 100%;
+            text-align: left;
+        }
+
+        #leanMaxRight {
+            position: absolute;
+            width: 100%;
+            text-align: right;
+        }
+        }
+
         #controls {
             bottom: 20px;
             left: 50%;
@@ -64,6 +88,16 @@
             left: 50%;
             transform: translateX(-50%);
             z-index: 5;
+        }
+
+        #navigator {
+            z-index: 999;
+            position: absolute;
+            bottom: 0px;
+            width: 100%;
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.6);
+            text-align: center;  /* ← 이것 추가 */
         }
 
         button {
@@ -91,16 +125,18 @@
     <canvas id="backHud"></canvas>
     <canvas id="hud"></canvas>
     <canvas id="graphCanvas"></canvas>
+    <div id="topNavi">
+        <div id="speedCenter"><span id="speed">SPEED</span></div>
+        <div id="leanMaxLeft"><span id="maxLeft">LEFT</span>°</div>
+        <div id="leanMaxRight"><span id="maxRight">RIGHT</span>°</div>
+    </div>
     <div id="status">
-        속도: <span id="speed">0</span> km/h<br>
         <div hidden>Yaw: <span id="yaw">0</span>°</div>
         <div hidden>Pitch: <span id="pitch">0</span>°</div>
         <div hidden>Roll: <span id="roll">0</span>°</div>
-        <div>Max 좌: <span id="maxLeft">0</span>°</div>
-        <div>Max 우: <span id="maxRight">0</span>°</div>
     </div>
     <div id="map"></div>
-    <div id="controls">
+    <div id="navigator">
         <button onclick="resetReference()">RESET</button>
     </div>
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
@@ -330,8 +366,8 @@
             const numRoll = parseFloat(relRoll);
 
             if (numRoll < 0 && Math.abs(numRoll) > maxLeftLean) {
-                maxLeftLean = Math.abs(numRoll);
-                document.getElementById('maxLeft').textContent = maxLeftLean.toFixed(1);
+                maxLeftLean = `${Math.abs(numRoll) < 10 ? "0" : ""}${Math.abs(numRoll).toFixed(1)}`;
+                document.getElementById('maxLeft').textContent = maxLeftLean;
             }
 
             if (numRoll > 0 && numRoll > maxRightLean) {
