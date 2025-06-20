@@ -35,8 +35,7 @@
             z-index: 1;
         }
 
-        #status,
-        #controls {
+        #status {
             z-index: 10;
             position: absolute;
             background: rgba(0, 0, 0, 0.6);
@@ -53,6 +52,7 @@
         }
 
         #topNavi {
+            z-index: 999;
             position: absolute;
             color: #fff;
             font-size: 2rem;
@@ -74,12 +74,6 @@
         #leanMaxRight {
             flex: 1;
             text-align: center;
-        }
-
-        #controls {
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
         }
 
         #graphCanvas {
