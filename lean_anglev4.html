@@ -88,7 +88,6 @@
 </head>
 
 <body>
-    <div id="map"></div>
     <canvas id="backHud"></canvas>
     <canvas id="hud"></canvas>
     <canvas id="graphCanvas"></canvas>
@@ -100,6 +99,7 @@
         <div>Max 좌: <span id="maxLeft">0</span>°</div>
         <div>Max 우: <span id="maxRight">0</span>°</div>
     </div>
+    <div id="map"></div>
     <div id="controls">
         <button onclick="resetReference()">RESET</button>
     </div>
@@ -179,7 +179,7 @@
             backCtx.stroke();
 
             // 눈금 그리기 (-90 ~ 90도)
-            for (let deg = -90; deg <= 90; deg += 5) {
+            for (let deg = -175; deg <= 180; deg += 5) {
                 const rad = (deg) * Math.PI / 180;
                 const outerX = 0 + radius * Math.sin(rad); // sin으로 수평
                 const outerY = 0 - radius * Math.cos(rad); // cos으로 수직
@@ -188,7 +188,9 @@
                 const innerY = 0 - (radius - len) * Math.cos(rad);
 
                 backCtx.beginPath();
-                if (Math.abs(deg) > 50) {
+                if (Math.abs(deg) > 80) {
+                    backCtx.strokeStyle = "#d5d8dc";
+                } else if (Math.abs(deg) > 45) {
                     backCtx.strokeStyle = "#ff0000";
                 } else if (deg != 0) {
                     backCtx.strokeStyle = "#0000ff";
@@ -205,7 +207,9 @@
                     backCtx.font = "12px sans-serif";
                     backCtx.fillStyle = "#fff";
                     backCtx.textAlign = "center";
-                    if (Math.abs(deg) > 50) {
+                     if (Math.abs(deg) > 80) {
+                        backCtx.fillStyle = "#d5d8dc";
+                    } else if (Math.abs(deg) > 45) {
                         backCtx.fillStyle = "#ff0000";
                     } else if (deg != 0) {
                         backCtx.fillStyle = "#0000ff";
@@ -248,16 +252,16 @@
                 ctx.stroke();
             }
 
-            ctx.rotate(-yaw * Math.PI / 180);
-            ctx.strokeStyle = '#28b463';
-            const angleL = 0 * Math.PI / 2;
-            const angleR = 2 * Math.PI / 2;
-            ctx.beginPath();
-            ctx.moveTo(Math.cos(angleL) * 65, (Math.sin(angleL) * 65) + 45);
-            ctx.lineTo(Math.cos(angleL) * 65, (Math.sin(angleL) * 65) - 45);
-            ctx.moveTo(Math.cos(angleR) * 65, (Math.sin(angleR) * 65) + 45);
-            ctx.lineTo(Math.cos(angleR) * 65, (Math.sin(angleR) * 65) - 45);
-            ctx.stroke();
+            // ctx.rotate(-yaw * Math.PI / 180);
+            // ctx.strokeStyle = '#28b463';
+            // const angleL = 0 * Math.PI / 2;
+            // const angleR = 2 * Math.PI / 2;
+            // ctx.beginPath();
+            // ctx.moveTo(Math.cos(angleL) * 65, (Math.sin(angleL) * 65) + 45);
+            // ctx.lineTo(Math.cos(angleL) * 65, (Math.sin(angleL) * 65) - 45);
+            // ctx.moveTo(Math.cos(angleR) * 65, (Math.sin(angleR) * 65) + 45);
+            // ctx.lineTo(Math.cos(angleR) * 65, (Math.sin(angleR) * 65) - 45);
+            // ctx.stroke();
             
             ctx.restore(); // 회전 적용 안 함
 
