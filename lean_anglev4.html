@@ -69,6 +69,7 @@
         button {
             padding: 10px 25px;
             font-size: 1rem;
+            background: transparent;
             color: #0ff;
             border: 2px solid #0ff;
             border-radius: 10px;
@@ -127,7 +128,7 @@
         let map, marker, markerIcon;
 
         drawBack()
-        drawHUD(90, 90, 90)
+        drawHUD(0, 0, 0)
         // drawGraphs()
 
         function initMap(lat, lon) {
@@ -168,12 +169,6 @@
             const radius = 150;
 
             backCtx.translate(centerX, centerY);
-            backCtx.strokeStyle = '#fff';
-            backCtx.lineWidth = 3
-            backCtx.beginPath();
-            backCtx.arc(0, 0, 150, 0, 2 * Math.PI);
-            // backCtx.arc(0, 0, radius, Math.PI, 0, false); // 180도
-            backCtx.stroke();
 
             // 위치 중앙
             backCtx.strokeStyle = '#0ff';
@@ -183,27 +178,30 @@
             backCtx.lineTo(100, 0);
             backCtx.stroke();
 
-
             // 눈금 그리기 (-90 ~ 90도)
-            for (let deg = -90; deg <= 90; deg++) {
+            for (let deg = -90; deg <= 90; deg += 5) {
                 const rad = (deg) * Math.PI / 180;
                 const outerX = 0 + radius * Math.sin(rad); // sin으로 수평
                 const outerY = 0 - radius * Math.cos(rad); // cos으로 수직
-                const len = deg % 10 === 0 ? 20 : deg % 5 === 0 ? 10 : 5;
+                const len = deg % 10 === 0 ? 15 : deg % 5 === 0 ? 10 : 5;
                 const innerX = 0 + (radius - len) * Math.sin(rad);
                 const innerY = 0 - (radius - len) * Math.cos(rad);
 
                 backCtx.beginPath();
+                if (Math.abs(deg) > 50) {
+                    backCtx.strokeStyle = "#ff0000";
+                } else if (deg != 0) {
+                    backCtx.strokeStyle = "#0000ff";
+                }
                 backCtx.moveTo(outerX, outerY);
                 backCtx.lineTo(innerX, innerY);
-                backCtx.strokeStyle = "#fff";
                 backCtx.lineWidth = deg % 10 === 0 ? 1.5 : 1;
                 backCtx.stroke();
 
                 // 숫자 표시
                 if (deg % 10 === 0) {
-                    const textX = 0 + (radius - 35) * Math.sin(rad);
-                    const textY = 0 - (radius - 35) * Math.cos(rad);
+                    const textX = 0 + (radius - 25) * Math.sin(rad);
+                    const textY = 0 - (radius - 25) * Math.cos(rad);
                     backCtx.font = "12px sans-serif";
                     backCtx.fillStyle = "#fff";
                     backCtx.textAlign = "center";
@@ -215,6 +213,14 @@
                     backCtx.fillText(Math.abs(deg).toString(), textX, textY + 4);
                 }
             }
+
+            backCtx.strokeStyle = '#fff';
+            backCtx.lineWidth = 2
+            backCtx.beginPath();
+            backCtx.arc(0, 0, 150, 0, 2 * Math.PI);
+            // backCtx.arc(0, 0, radius, Math.PI, 0, false); // 180도
+            backCtx.stroke();
+
         }
 
         function drawHUD(roll, pitch, yaw) {
@@ -225,6 +231,7 @@
             ctx.translate(w / 2, h / 2);
 
             // 중심점
+            ctx.strokeStyle = '#ff0';
             ctx.beginPath();
             ctx.arc(0, 0, 3, 0, 2 * Math.PI);
             ctx.fill();
@@ -240,19 +247,29 @@
                 ctx.lineTo(x, y);
                 ctx.stroke();
             }
+
+            ctx.strokeStyle = "#0f0";
+            for (let x = -65; x <= 65; x += 65) {
+               const y = (roll - x) * 1;
+                ctx.beginPath();
+                ctx.moveTo(y, -x);
+                ctx.lineTo(y, x);
+                ctx.stroke(); 
+            }
             ctx.restore(); // 회전 적용 안 함
 
             // 회전하는 바늘만 따로 회전
             ctx.save();
-            ctx.rotate((roll + 180) * Math.PI / 180); // 바늘만 회전
             ctx.strokeStyle = '#ffff00';
             ctx.lineWidth = 2;
+            ctx.rotate((roll + 180) * Math.PI / 180); // 바늘만 회전
+            
             ctx.beginPath();
             ctx.moveTo(0, 0);
             ctx.lineTo(0, 100);
-            // ctx.stroke();
-            ctx.closePath();
-            ctx.fill();
+            ctx.stroke();
+            // ctx.closePath();
+            // ctx.fill();
             ctx.restore();
 
             ctx.restore();
