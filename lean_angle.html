@@ -23,7 +23,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            z-index: 0;
+            z-index: 1;
         }
 
         canvas {
@@ -387,7 +387,6 @@
             const lon = coords.longitude.toFixed(5);
             const speed = coords.speed != null ? (coords.speed * 3.6).toFixed(1) : 0;
             document.getElementById("speed").textContent = speed;
-            document.getElementById("coords").textContent = `${lat}, ${lon}`;
         }
 
         /*function updateGPSV2(position) {
