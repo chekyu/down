@@ -69,7 +69,6 @@
         button {
             padding: 10px 25px;
             font-size: 1rem;
-            background: transparent;
             color: #0ff;
             border: 2px solid #0ff;
             border-radius: 10px;
@@ -134,11 +133,11 @@
         function initMap(lat, lon) {
             map = L.map('map', {
                 zoomControl: false // 확대/축소 버튼 제거
-            }).setView([lat, lon], 20);
+            }).setView([lat, lon], 5);
             L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}.png', {
                 attribution: '&copy; OpenStreetMap contributors & CartoDB',
                 subdomains: 'abcd',
-                maxZoom: 20
+                maxZoom: 15
             }).addTo(map);
         }
 
