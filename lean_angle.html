@@ -390,12 +390,10 @@
             document.getElementById("coords").textContent = `${lat}, ${lon}`;
         }
 
-        function updateGPSV2(position) {
+        /*function updateGPSV2(position) {
             const coords = position.coords;
             const now = position.timestamp;
-
             let speed = 0;
-
             if (lastPosition && lastTimestamp) {
                 const dx = coords.longitude - lastPosition.longitude;
                 const dy = coords.latitude - lastPosition.latitude;
@@ -416,14 +414,11 @@
 
                 speed = (distance / timeDiff) * 3.6; // km/h
             }
-
             document.getElementById("speed").textContent = speed.toFixed(1);
-
             lastPosition = coords;
             lastTimestamp = now;
-
             updateMap(coords.latitude, coords.longitude, filteredYaw);
-        }
+        }*/
 
         if (navigator.geolocation) {
             navigator.geolocation.watchPosition(updateGPS);
