@@ -135,7 +135,7 @@
             map = L.map('map', {
                 zoomControl: false // 확대/축소 버튼 제거
             }).setView([lat, lon], 20);
-            L.tileLayer('https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png', {
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}.png', {
                 attribution: '&copy; OpenStreetMap contributors & CartoDB',
                 subdomains: 'abcd',
                 maxZoom: 20
