@@ -134,11 +134,11 @@
         function initMap(lat, lon) {
             map = L.map('map', {
                 zoomControl: false // 확대/축소 버튼 제거
-            }).setView([lat, lon], 17);
-            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+            }).setView([lat, lon], 20);
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png', {
                 attribution: '&copy; OpenStreetMap contributors & CartoDB',
                 subdomains: 'abcd',
-                maxZoom: 19
+                maxZoom: 20
             }).addTo(map);
         }
 
@@ -170,10 +170,10 @@
 
             backCtx.translate(centerX, centerY);
             backCtx.strokeStyle = '#fff';
-            backCtx.lineWidth = 5
+            backCtx.lineWidth = 3
             backCtx.beginPath();
-            // backCtx.arc(0, 0, 150, 0, 2 * Math.PI);
-            backCtx.arc(0, 0, radius, Math.PI, 0, false); // 180도
+            backCtx.arc(0, 0, 150, 0, 2 * Math.PI);
+            // backCtx.arc(0, 0, radius, Math.PI, 0, false); // 180도
             backCtx.stroke();
 
             // 위치 중앙
