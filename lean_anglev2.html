@@ -1,257 +1,312 @@
 <!DOCTYPE html>
 <html lang="ko">
+
 <head>
-  <meta charset="UTF-8">
-  <title>Ultimate HUD</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#000000">
-  <link rel="manifest" href="manifest.json">
-  <link rel="icon" href="icon-192.png">
-  <style>
-    html, body {
-      margin: 0;
-      padding: 0;
-      background: #000;
-      overflow: hidden;
-      height: 100vh;
-      width: 100vw;
-      font-family: monospace;
-      color: #0ff;
-    }
-    canvas {
-      position: absolute;
-      top: 0;
-      left: 0;
-      z-index: 0;
-    }
-    #info {
-      position: absolute;
-      top: 10px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: rgba(0, 0, 0, 0.6);
-      padding: 10px 20px;
-      border-radius: 10px;
-      z-index: 10;
-      color: #fff;
-    }
-    #controls {
-      position: absolute;
-      bottom: 20px;
-      left: 50%;
-      transform: translateX(-50%);
-      z-index: 10;
-    }
-    #status {
-      position: absolute;
-      top: 10px;
-      right: 10px;
-      background: rgba(0, 0, 0, 0.6);
-      padding: 10px;
-      border-radius: 8px;
-      z-index: 10;
-      color: #fff;
-      font-size: 0.9rem;
-      text-align: right;
-    }
-    #graphCanvas {
-      position: absolute;
-      bottom: 80px;
-      left: 50%;
-      transform: translateX(-50%);
-      z-index: 5;
-    }
-    button {
-      padding: 10px 25px;
-      font-size: 1rem;
-      background: transparent;
-      color: #0ff;
-      border: 2px solid #0ff;
-      border-radius: 10px;
-      cursor: pointer;
-    }
-    button:hover {
-      background: #0ff;
-      color: #000;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <title>Ultimate HUD</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <style>
+        html,
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            height: 100vh;
+            width: 100vw;
+            font-family: monospace;
+            color: #0ff;
+            background: black;
+        }
+
+        #map {
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 0;
+        }
+
+        canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
+        }
+
+        #status {
+            z-index: 10;
+            position: absolute;
+            background: rgba(0, 0, 0, 0.6);
+            color: #fff;
+            padding: 10px;
+            border-radius: 8px;
+            top: 10px;
+            right: 10px;
+            font-size: 0.9rem;
+            text-align: right;
+        }
+
+        #topNavi {
+            z-index: 90;
+            position: absolute;
+            color: #fff;
+            font-size: 2rem;
+            width: 100%;
+            padding-top: 20px;
+            display: flex;
+        }
+
+        #speedCenter {
+            flex: 3;
+            text-align: center;
+        }
+
+        #leanMaxLeft {
+            flex: 1;
+            text-align: center;
+        }
+
+        #leanMaxRight {
+            flex: 1;
+            text-align: center;
+        }
+
+        #graphCanvas {
+            position: absolute;
+            top: 60px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.1);
+            z-index: 1;
+        }
+
+        #navigator {
+            z-index: 999;
+            position: absolute;
+            bottom: 0px;
+            width: 100%;
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.6);
+            text-align: center;
+        }
+
+        button {
+            padding: 10px 25px;
+            font-size: 1rem;
+            background: transparent;
+            color: #0ff;
+            border: 2px solid #0ff;
+            border-radius: 10px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #0ff;
+            color: #000;
+        }
+
+        .marker-rotated {
+            transform-origin: center;
+        }
+    </style>
 </head>
+
 <body>
-  <canvas id="hud"></canvas>
-  <canvas id="graphCanvas" width="400" height="80"></canvas>
+    <div id="map"></div>
+    <canvas id="background"></canvas>
+    <canvas id="hud"></canvas>
+    <canvas id="graphCanvas" width="400" height="80"></canvas>
 
-  <div id="info">
-    <div>Yaw: <span id="yaw">0</span>° (<span id="direction">-</span>)</div>
-    <div>Pitch: <span id="pitch">0</span>°</div>
-    <div>Roll: <span id="roll">0</span>°</div>
-  </div>
-  <div id="status">
-    속도: <span id="speed">0</span> km/h<br>
-    위치: <span id="coords">-</span>
-  </div>
-  <div id="controls">
-    <button onclick="resetReference()">RESET</button>
-  </div>
+    <div id="status">
+        속도: <span id="speed">0</span> km/h<br>
+        <div>Yaw: <span id="yaw">0</span>°</div>
+        <div>Pitch: <span id="pitch">0</span>°</div>
+        <div>Roll: <span id="roll">0</span>°</div>
+    </div>
+    <div id="controls">
+        <button onclick="resetReference()">RESET</button>
+    </div>
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script>
+        const canvas = document.getElementById('hud');
+        const ctx = canvas.getContext('2d');
+        const graphCanvas = document.getElementById('graphCanvas');
+        const graphCtx = graphCanvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
 
-  <script>
-    const canvas = document.getElementById('hud');
-    const ctx = canvas.getContext('2d');
-    const graphCanvas = document.getElementById('graphCanvas');
-    const graphCtx = graphCanvas.getContext('2d');
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
+        let yawOffset = 0, pitchOffset = 0, rollOffset = 0;
+        let filteredYaw = 0, filteredPitch = 0, filteredRoll = 0;
+        const alpha = 0.1;
+        const pitchHistory = [], rollHistory = [];
 
-    let yawOffset = 0, pitchOffset = 0, rollOffset = 0;
-    let filteredYaw = 0, filteredPitch = 0, filteredRoll = 0;
-    const alpha = 0.1;
+        let map, marker;
 
-    const pitchHistory = [], rollHistory = [];
+        function initMap(lat, lon) {
+            map = L.map('map', {
+                zoomControl: false // 확대/축소 버튼 제거
+            }).setView([lat, lon], 17);
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+                attribution: '&copy; OpenStreetMap contributors & CartoDB',
+                subdomains: 'abcd',
+                maxZoom: 19
+            }).addTo(map);
+        }
 
-    function resetReference() {
-      yawOffset = filteredYaw;
-      pitchOffset = filteredPitch;
-      rollOffset = filteredRoll;
-    }
+        function updateMap(lat, lon, heading) {
+            if (!map) initMap(lat, lon);
+            else {
+                map.setView([lat, lon]);
+                marker.setLatLng([lat, lon]);
+            }
+        }
 
-    function getDirectionText(yaw) {
-      const d = Math.round(yaw);
-      if (d >= 45 && d < 135) return "E";
-      if (d >= 135 && d < 225) return "S";
-      if (d >= 225 && d < 315) return "W";
-      return "N";
-    }
+        function resetReference() {
+            yawOffset = filteredYaw;
+            pitchOffset = filteredPitch;
+            rollOffset = filteredRoll;
+        }
 
-    function drawHUD(roll, pitch, yaw) {
-      const w = canvas.width;
-      const h = canvas.height;
-      ctx.clearRect(0, 0, w, h);
-      ctx.save();
-      ctx.translate(w / 2, h / 2);
+        function drawHUD(roll, pitch, yaw) {
+            const w = canvas.width;
+            const h = canvas.height;
+            ctx.clearRect(0, 0, w, h);
+            ctx.save();
+            ctx.translate(w / 2, h / 2);
 
-      ctx.beginPath();
-      ctx.strokeStyle = '#0ff';
-      ctx.lineWidth = 3;
-      ctx.arc(0, 0, 120, -Math.PI / 2 - roll * Math.PI / 180, -Math.PI / 2);
-      ctx.stroke();
+            ctx.beginPath();
+            ctx.strokeStyle = '#0ff';
+            ctx.lineWidth = 3;
+            ctx.arc(0, 0, 120, -Math.PI / 2 - roll * Math.PI / 180, -Math.PI / 2);
+            ctx.stroke();
 
-      ctx.strokeStyle = '#0f0';
-      for (let i = -90; i <= 90; i += 10) {
-        const y = (pitch - i) * 2;
-        ctx.beginPath();
-        ctx.moveTo(-40, y);
-        ctx.lineTo(40, y);
-        ctx.stroke();
-      }
+            ctx.strokeStyle = '#0f0';
+            for (let i = -90; i <= 90; i += 10) {
+                const y = (pitch - i) * 2;
+                ctx.beginPath();
+                ctx.moveTo(-40, y);
+                ctx.lineTo(40, y);
+                ctx.stroke();
+            }
 
-      ctx.strokeStyle = '#fff';
-      ctx.beginPath();
-      ctx.moveTo(-15, 0);
-      ctx.lineTo(15, 0);
-      ctx.moveTo(0, -15);
-      ctx.lineTo(0, 15);
-      ctx.stroke();
+            ctx.strokeStyle = '#fff';
+            ctx.beginPath();
+            ctx.moveTo(-15, 0);
+            ctx.lineTo(15, 0);
+            ctx.moveTo(0, -15);
+            ctx.lineTo(0, 15);
+            ctx.stroke();
 
-      ctx.rotate(-yaw * Math.PI / 180);
-      ctx.strokeStyle = '#ff0';
-      ctx.beginPath();
-      ctx.arc(0, 0, 150, 0, 2 * Math.PI);
-      ctx.stroke();
-      ['N','E','S','W'].forEach((dir, i) => {
-        const angle = i * Math.PI / 2;
-        const x = Math.cos(angle) * 150;
-        const y = Math.sin(angle) * 150;
-        ctx.fillStyle = '#ff0';
-        ctx.font = '20px monospace';
-        ctx.fillText(dir, x - 10, y + 5);
-      });
+            ctx.rotate(-yaw * Math.PI / 180);
+            ctx.strokeStyle = '#ff0';
+            ctx.beginPath();
+            ctx.arc(0, 0, 150, 0, 2 * Math.PI);
+            ctx.stroke();
+            ['N', 'E', 'S', 'W'].forEach((dir, i) => {
+                const angle = i * Math.PI / 2;
+                const x = Math.cos(angle) * 150;
+                const y = Math.sin(angle) * 150;
+                ctx.fillStyle = '#ff0';
+                ctx.font = '20px monospace';
+                ctx.fillText(dir, x - 10, y + 5);
+            });
 
-      ctx.restore();
-    }
+            ctx.restore();
+        }
 
-    function drawGraphs() {
-      const w = graphCanvas.width;
-      const h = graphCanvas.height;
-      graphCtx.clearRect(0, 0, w, h);
+        function drawGraphs() {
+            const w = graphCanvas.width;
+            const h = graphCanvas.height;
+            graphCtx.clearRect(0, 0, w, h);
 
-      // Pitch
-      graphCtx.beginPath();
-      graphCtx.strokeStyle = '#0f0';
-      pitchHistory.forEach((val, i) => {
-        const y = h / 2 - val;
-        if (i === 0) graphCtx.moveTo(i, y);
-        else graphCtx.lineTo(i, y);
-      });
-      graphCtx.stroke();
+            graphCtx.beginPath();
+            graphCtx.strokeStyle = '#0f0';
+            pitchHistory.forEach((val, i) => {
+                const y = h / 2 - val;
+                if (i === 0) graphCtx.moveTo(i, y);
+                else graphCtx.lineTo(i, y);
+            });
+            graphCtx.stroke();
 
-      // Roll
-      graphCtx.beginPath();
-      graphCtx.strokeStyle = '#f0f';
-      rollHistory.forEach((val, i) => {
-        const y = h / 2 - val;
-        if (i === 0) graphCtx.moveTo(i, y);
-        else graphCtx.lineTo(i, y);
-      });
-      graphCtx.stroke();
-    }
+            graphCtx.beginPath();
+            graphCtx.strokeStyle = '#f0f';
+            rollHistory.forEach((val, i) => {
+                const y = h / 2 - val;
+                if (i === 0) graphCtx.moveTo(i, y);
+                else graphCtx.lineTo(i, y);
+            });
+            graphCtx.stroke();
+        }
 
-    function update(e) {
-      const rawYaw = (e.alpha ?? 0);
-      const rawPitch = (e.beta ?? 0);
-      const rawRoll = (e.gamma ?? 0);
-      filteredYaw = alpha * rawYaw + (1 - alpha) * filteredYaw;
-      filteredPitch = alpha * rawPitch + (1 - alpha) * filteredPitch;
-      filteredRoll = alpha * rawRoll + (1 - alpha) * filteredRoll;
+        function update(e) {
+            const rawYaw = (e.alpha ?? 0);
+            const rawPitch = (e.beta ?? 0);
+            const rawRoll = (e.gamma ?? 0);
+            filteredYaw = alpha * rawYaw + (1 - alpha) * filteredYaw;
+            filteredPitch = alpha * rawPitch + (1 - alpha) * filteredPitch;
+            filteredRoll = alpha * rawRoll + (1 - alpha) * filteredRoll;
 
-      const relYaw = ((filteredYaw - yawOffset + 360) % 360).toFixed(1);
-      const relPitch = (filteredPitch - pitchOffset).toFixed(1);
-      const relRoll = (filteredRoll - rollOffset).toFixed(1);
+            const relYaw = ((filteredYaw - yawOffset + 360) % 360).toFixed(1);
+            const relPitch = (filteredPitch - pitchOffset).toFixed(1);
+            const relRoll = (filteredRoll - rollOffset).toFixed(1);
 
-      document.getElementById("yaw").textContent = relYaw;
-      document.getElementById("pitch").textContent = relPitch;
-      document.getElementById("roll").textContent = relRoll;
-      document.getElementById("direction").textContent = getDirectionText(parseFloat(relYaw));
+            document.getElementById("yaw").textContent = relYaw;
+            document.getElementById("pitch").textContent = relPitch;
+            document.getElementById("roll").textContent = relRoll;
 
-      pitchHistory.push(parseFloat(relPitch));
-      rollHistory.push(parseFloat(relRoll));
-      if (pitchHistory.length > graphCanvas.width) pitchHistory.shift();
-      if (rollHistory.length > graphCanvas.width) rollHistory.shift();
+            pitchHistory.push(parseFloat(relPitch));
+            rollHistory.push(parseFloat(relRoll));
+            if (pitchHistory.length > graphCanvas.width) pitchHistory.shift();
+            if (rollHistory.length > graphCanvas.width) rollHistory.shift();
 
-      drawHUD(parseFloat(relRoll), parseFloat(relPitch), parseFloat(relYaw));
-      drawGraphs();
-    }
+            drawHUD(parseFloat(relRoll), parseFloat(relPitch), parseFloat(relYaw));
+            drawGraphs();
 
-    function updateGPS(position) {
-      const coords = position.coords;
-      const lat = coords.latitude.toFixed(5);
-      const lon = coords.longitude.toFixed(5);
-      const speed = coords.speed != null ? (coords.speed * 3.6).toFixed(1) : 0;
-      document.getElementById("speed").textContent = speed;
-      document.getElementById("coords").textContent = `${lat}, ${lon}`;
-    }
+            if (marker && marker.getLatLng) {
+                const {
+                    lat,
+                    lng
+                } = marker.getLatLng();
+                updateMap(lat, lng, parseFloat(relYaw));
+            }
+        }
 
-    if (navigator.geolocation) {
-      navigator.geolocation.watchPosition(updateGPS);
-    }
+        function updateGPS(position) {
+            const coords = position.coords;
+            const lat = coords.latitude.toFixed(5);
+            const lon = coords.longitude.toFixed(5);
+            const speed = coords.speed != null ? (coords.speed * 3.6).toFixed(1) : 0;
+            document.getElementById("speed").textContent = speed;
+            updateMap(coords.latitude, coords.longitude, filteredYaw);
+        }
 
-    if (typeof DeviceOrientationEvent !== "undefined" && typeof DeviceOrientationEvent.requestPermission === "function") {
-      const btn = document.createElement("button");
-      btn.innerText = "센서 허용";
-      btn.style.position = "absolute";
-      btn.style.top = "50%";
-      btn.style.left = "50%";
-      btn.style.transform = "translate(-50%, -50%)";
-      btn.onclick = () => {
-        DeviceOrientationEvent.requestPermission().then(resp => {
-          if (resp === "granted") {
+        if (navigator.geolocation) {
+            navigator.geolocation.watchPosition(updateGPS);
+        } else {
+            alert('이 브라우저는 위치 정보를 지원하지 않습니다.');
+        }
+
+        if (typeof DeviceOrientationEvent !== "undefined" && typeof DeviceOrientationEvent.requestPermission === "function") {
+            const btn = document.createElement("button");
+            btn.innerText = "센서 허용";
+            btn.style.position = "absolute";
+            btn.style.top = "50%";
+            btn.style.left = "50%";
+            btn.style.transform = "translate(-50%, -50%)";
+            btn.style.zIndex = "999";
+            btn.onclick = () => {
+                DeviceOrientationEvent.requestPermission().then(resp => {
+                    if (resp === "granted") {
+                        window.addEventListener("deviceorientation", update);
+                        btn.remove();
+                    }
+                });
+            };
+            document.body.appendChild(btn);
+        } else {
             window.addEventListener("deviceorientation", update);
-            btn.remove();
-          }
-        });
-      };
-      document.body.appendChild(btn);
-    } else {
-      window.addEventListener("deviceorientation", update);
-    }
-  </script>
+        }
+    </script>
 </body>
+
 </html>
