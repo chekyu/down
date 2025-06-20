@@ -151,7 +151,7 @@
         const pitchHistory = [],
             rollHistory = [];
 
-        let map;
+        let map, marker, markerIcon;
 
         drawBack()
         drawHUD(0, 0, 0)
@@ -172,7 +172,7 @@
             if (!map) initMap(lat, lon);
             else {
                 map.setView([lat, lon]);
-                // marker.setLatLng([lat, lon]);
+                marker.setLatLng([lat, lon]);
             }
         }
 
@@ -368,13 +368,13 @@
             drawHUD(parseFloat(relRoll), parseFloat(relPitch), parseFloat(relYaw));
             drawGraphs();
 
-            // if (marker && marker.getLatLng) {
-            //     const {
-            //         lat,
-            //         lng
-            //     } = marker.getLatLng();
-            //     updateMap(lat, lng, parseFloat(relYaw));
-            // }
+            if (marker && marker.getLatLng) {
+                const {
+                    lat,
+                    lng
+                } = marker.getLatLng();
+                updateMap(lat, lng, parseFloat(relYaw));
+            }
         }
 
         function updateGPS(position) {
