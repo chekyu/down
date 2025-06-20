@@ -2,321 +2,417 @@
 <html lang="ko">
 
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>모터사이클 Lean HUD</title>
+    <meta charset="UTF-8">
+    <title>Ultimate HUD</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
     <style>
+        html,
         body {
-            background: black;
             margin: 0;
+            padding: 0;
             overflow: hidden;
-            font-family: 'Courier New', monospace;
+            font-family: monospace;
+            color: #0ff;
+            background: black;
+        }
+
+        #map {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
         }
 
         canvas {
-            display: block;
-        }
-
-        #hud {
             position: absolute;
-            top: 10px;
-            left: 10px;
-            color: #ffff00;
-            font-size: 1rem;
-            background: rgba(0, 0, 0, 0.3);
-            padding: 10px;
-            border-radius: 6px;
-            z-index: 2;
+            top: 0;
+            left: 0;
+            z-index: 1;
         }
 
-        #resetBtn,
-        #reinitBtn {
+        #status {
+            z-index: 10;
             position: absolute;
-            top: 10px;
-            padding: 10px 15px;
-            font-size: 1rem;
-            background: #ffffff;
-            color: black;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            z-index: 2;
-        }
-
-        #resetBtn {
-            right: 10px;
-        }
-
-        #reinitBtn {
-            right: 140px;
-        }
-
-        #logList {
-            position: absolute;
-            bottom: 10px;
-            left: 10px;
-            right: 10px;
-            max-height: 40%;
-            overflow-y: auto;
-            background: rgba(0, 255, 0, 0.05);
-            color: #00ff00;
-            font-size: 0.9rem;
+            background: rgba(0, 0, 0, 0.6);
+            color: #fff;
             padding: 10px;
             border-radius: 8px;
-            z-index: 2;
         }
 
-        @media (orientation: portrait) {
-            #hud {
-                top: auto;
-                bottom: 10px;
-                font-size: 0.9rem;
-            }
+        #status {
+            top: 10px;
+            right: 10px;
+            font-size: 0.9rem;
+            text-align: right;
+        }
 
-            #resetBtn {
-                top: 10px;
-            }
+        #topNavi {
+            z-index: 999;
+            position: absolute;
+            color: #fff;
+            font-size: 2rem;
+            width: 100%;
+            padding: 20px;
+            display: flex;
+        }
 
-            #reinitBtn {
-                top: 10px;
-            }
+        #speedCenter {
+            flex: 3;
+            text-align: center;
+        }
 
-            #logList {
-                bottom: 120px;
-                font-size: 0.8rem;
-            }
+        #leanMaxLeft {
+            flex: 1;
+            text-align: center;
+        }
+
+        #leanMaxRight {
+            flex: 1;
+            text-align: center;
+        }
+
+        #graphCanvas {
+            position: absolute;
+            bottom: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 5;
+        }
+
+        #navigator {
+            z-index: 999;
+            position: absolute;
+            bottom: 0px;
+            width: 100%;
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.6);
+            text-align: center;
+            /* ← 이것 추가 */
+        }
+
+        button {
+            padding: 10px 25px;
+            font-size: 1rem;
+            background: transparent;
+            color: #0ff;
+            border: 2px solid #0ff;
+            border-radius: 10px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #0ff;
+            color: #000;
+        }
+
+        .marker-rotated {
+            transform-origin: center;
         }
     </style>
 </head>
 
 <body>
-    <canvas id="hudCanvas"></canvas>
-    <div id="hud">
-        <div>SPD: <span id="spd">0</span> km/h</div>
-        <div>기울기: <span id="totalAngle">0.0</span>&deg;</div>
-        <div>기울기 유지시간: <span id="duration">0.0</span>초</div>
-        <div>현재 좌우 기울기: <span id="currentLean">0.0</span>&deg;</div>
-        <div>최대 좌측 기울기: <span id="maxLeft">0.0</span>&deg;</div>
-        <div>최대 우측 기울기: <span id="maxRight">0.0</span>&deg;</div>
-        <div>
-            gamma : <span id="gamma">0</span> &deg;
-            beta : <span id="beta">0</span> &deg;
-            alpha : <span id="alpha">0</span> &deg;
-        </div>
+    <canvas id="backHud"></canvas>
+    <canvas id="hud"></canvas>
+    <canvas id="graphCanvas"></canvas>
+    <div id="topNavi">
+        <div id="leanMaxLeft"><span id="maxLeft">1</span>°</div>
+        <div id="speedCenter"><span id="speed">00</span></div>
+        <div id="leanMaxRight"><span id="maxRight">1</span>°</div>
     </div>
-    <button id="reinitBtn" onclick="reinitSensor()">초기화</button>
-    <button id="resetBtn" onclick="resetMax()">
-        <span id="offset">활성</span>
-    </button>
-    <div id="logList"></div>
-
+    <div id="status">
+        <div hidden>Yaw: <span id="yaw">0</span>°</div>
+        <div hidden>Pitch: <span id="pitch">0</span>°</div>
+        <div hidden>Roll: <span id="roll">0</span>°</div>
+    </div>
+    <!--<div id="map"></div>-->
+    <div id="navigator">
+        <button onclick="resetReference()">RESET</button>
+    </div>
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
     <script>
-        const canvas = document.getElementById('hudCanvas');
+        const canvas = document.getElementById('hud');
         const ctx = canvas.getContext('2d');
-        let maxLeftLean = 0;
-        let maxRightLean = 0;
-        let leanStartTime = null;
-        let offset = {
-            alpha: 0,
-            beta: 0,
-            gamma: 0
-        };
+        const graphCanvas = document.getElementById('graphCanvas');
+        const graphCtx = graphCanvas.getContext('2d');
+        const backCanvas = document.getElementById('backHud');
+        const backCtx = backCanvas.getContext('2d');
 
-        function resizeCanvas() {
+        let yawOffset = 0,
+            pitchOffset = 0,
+            rollOffset = 0;
+        let filteredYaw = 0,
+            filteredPitch = 0,
+            filteredRoll = 0;
+        let maxLeftLean = 0,
+            maxRightLean = 0;
+
+        const alpha = 0.1;
+        const pitchHistory = [],
+            rollHistory = [];
+
+        let map, marker, markerIcon;
+
+        drawBack()
+        drawHUD(0, 0, 0)
+
+        function initMap(lat, lon) {
+            map = L.map('map', {
+                zoomControl: false // 확대/축소 버튼 제거
+            }).setView([lat, lon], 15);
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}.png', {
+                attribution: '&copy; OpenStreetMap contributors & CartoDB',
+                subdomains: 'abcd',
+                maxZoom: 15
+            }).addTo(map);
+        }
+
+        function updateMap(lat, lon, heading) {
+            if (!map) initMap(lat, lon);
+            else {
+                map.setView([lat, lon]);
+                marker.setLatLng([lat, lon]);
+            }
+        }
+
+        function resetReference() {
+            maxLeftLean = 0;
+            maxRightLean = 0;
+            yawOffset = filteredYaw;
+            pitchOffset = filteredPitch;
+            rollOffset = filteredRoll;
+        }
+
+        function drawBack() {
             canvas.width = window.innerWidth;
             canvas.height = window.innerHeight;
-        }
-        window.addEventListener('resize', resizeCanvas);
-        window.addEventListener('orientationchange', resizeCanvas);
-        resizeCanvas();
-        drawHUD(0);
+            backCanvas.width = window.innerWidth;
+            backCanvas.height = window.innerHeight;
 
-        function drawHUD(angle) {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            const centerX = canvas.width / 2;
-            const centerY = canvas.height / 1.5;
-            const radius = (canvas.width - 50) / 2;
+            const centerX = backCanvas.width / 2;
+            const centerY = backCanvas.height / 2;
+            const radius = 150;
 
-            // 반원 그리기 (위로 열린 반원)
-            ctx.beginPath();
-            ctx.arc(centerX, centerY, radius, Math.PI, 0, false); // 180도
-            ctx.strokeStyle = "#fff";
-            ctx.lineWidth = 2;
-            ctx.stroke();
+            backCtx.translate(centerX, centerY);
 
-            // 중심점
-            ctx.beginPath();
-            ctx.arc(centerX, centerY, 3, 0, 2 * Math.PI);
-            ctx.fill();
+            // 위치 중앙
+            backCtx.strokeStyle = '#0ff';
+            backCtx.lineWidth = 1
+            backCtx.beginPath();
+            backCtx.moveTo(-100, 0);
+            backCtx.lineTo(100, 0);
+            backCtx.stroke();
 
             // 눈금 그리기 (-90 ~ 90도)
-            for (let deg = -90; deg <= 90; deg++) {
+            for (let deg = -175; deg <= 180; deg += 5) {
                 const rad = (deg) * Math.PI / 180;
-                const outerX = centerX + radius * Math.sin(rad); // sin으로 수평
-                const outerY = centerY - radius * Math.cos(rad); // cos으로 수직
-                const len = deg % 10 === 0 ? 20 : deg % 5 === 0 ? 10 : 5;
-                const innerX = centerX + (radius - len) * Math.sin(rad);
-                const innerY = centerY - (radius - len) * Math.cos(rad);
+                const outerX = 0 + radius * Math.sin(rad); // sin으로 수평
+                const outerY = 0 - radius * Math.cos(rad); // cos으로 수직
+                const len = deg % 10 === 0 ? 15 : deg % 5 === 0 ? 10 : 5;
+                const innerX = 0 + (radius - len) * Math.sin(rad);
+                const innerY = 0 - (radius - len) * Math.cos(rad);
 
-                ctx.beginPath();
-                ctx.moveTo(outerX, outerY);
-                ctx.lineTo(innerX, innerY);
-                ctx.strokeStyle = "#fff";
-                ctx.lineWidth = deg % 10 === 0 ? 1.5 : 1;
-                ctx.stroke();
+                backCtx.beginPath();
+                if (Math.abs(deg) > 80) {
+                    backCtx.strokeStyle = "#d5d8dc";
+                } else if (Math.abs(deg) > 45) {
+                    backCtx.strokeStyle = "#ff0000";
+                } else if (deg != 0) {
+                    backCtx.strokeStyle = "#0000ff";
+                }
+                backCtx.moveTo(outerX, outerY);
+                backCtx.lineTo(innerX, innerY);
+                backCtx.lineWidth = deg % 10 === 0 ? 1.5 : 1;
+                backCtx.stroke();
 
                 // 숫자 표시
                 if (deg % 10 === 0) {
-                    const textX = centerX + (radius - 35) * Math.sin(rad);
-                    const textY = centerY - (radius - 35) * Math.cos(rad);
-                    ctx.font = "12px sans-serif";
-                    ctx.fillStyle = "#fff";
-                    ctx.textAlign = "center";
-                    if (Math.abs(deg) > 50) {
-                        ctx.fillStyle = "#ff0000";
+                    const textX = 0 + (radius - 25) * Math.sin(rad);
+                    const textY = 0 - (radius - 25) * Math.cos(rad);
+                    backCtx.font = "12px sans-serif";
+                    backCtx.fillStyle = "#fff";
+                    backCtx.textAlign = "center";
+                    if (Math.abs(deg) > 80) {
+                        backCtx.fillStyle = "#d5d8dc";
+                    } else if (Math.abs(deg) > 45) {
+                        backCtx.fillStyle = "#ff0000";
                     } else if (deg != 0) {
-                        ctx.fillStyle = "#0000ff";
+                        backCtx.fillStyle = "#0000ff";
                     }
-                    ctx.fillText(Math.abs(deg).toString(), textX, textY + 4);
+                    backCtx.fillText(Math.abs(deg).toString(), textX, textY + 4);
                 }
             }
 
-            // 기준점에서 바늘 그리기
-            ctx.save();
-            ctx.translate(centerX, centerY); // 중심점으로 이동
-            ctx.rotate(angle * Math.PI / 180); // lean 값만큼 회전
+            backCtx.strokeStyle = '#fff';
+            backCtx.lineWidth = 2
+            backCtx.beginPath();
+            backCtx.arc(0, 0, 150, 0, 2 * Math.PI);
+            // backCtx.arc(0, 0, radius, Math.PI, 0, false); // 180도
+            backCtx.stroke();
 
-            ctx.strokeStyle = '#ffff00'; // 노란색 바늘
-            ctx.lineWidth = 3;
+        }
+
+        function drawHUD(roll, pitch, yaw) {
+            const w = canvas.width;
+            const h = canvas.height;
+            ctx.clearRect(0, 0, w, h);
+            ctx.save();
+            ctx.translate(w / 2, h / 2);
+
+            // 중심점
+            ctx.strokeStyle = '#ff0';
             ctx.beginPath();
-            ctx.moveTo(0, 0); // 기준점에서 시작
-            ctx.lineTo(0, -radius + 40); // 위쪽으로 길게 뻗는 바늘
+            ctx.arc(0, 0, 3, 0, 2 * Math.PI);
+            ctx.fill();
+
+            // 눈금선 (Pitch 기준, 회전 없음)
+            ctx.save();
+            ctx.lineWidth = 1;
+            for (let x = -50; x <= 50; x += 10) {
+                const y = (pitch - x) * 1;
+                ctx.strokeStyle = x > 0 ? "#f5b7b1" : "#aed6f1";
+                ctx.beginPath();
+                ctx.moveTo(-x, y);
+                ctx.lineTo(x, y);
+                ctx.stroke();
+            }
+
+            // ctx.rotate(-yaw * Math.PI / 180);
+            // ctx.strokeStyle = '#28b463';
+            // const angleL = 0 * Math.PI / 2;
+            // const angleR = 2 * Math.PI / 2;
+            // ctx.beginPath();
+            // ctx.moveTo(Math.cos(angleL) * 65, (Math.sin(angleL) * 65) + 45);
+            // ctx.lineTo(Math.cos(angleL) * 65, (Math.sin(angleL) * 65) - 45);
+            // ctx.moveTo(Math.cos(angleR) * 65, (Math.sin(angleR) * 65) + 45);
+            // ctx.lineTo(Math.cos(angleR) * 65, (Math.sin(angleR) * 65) - 45);
+            // ctx.stroke();
+
+            ctx.restore(); // 회전 적용 안 함
+
+            // 회전하는 바늘만 따로 회전
+            ctx.save();
+            ctx.strokeStyle = '#ffff00';
+            ctx.lineWidth = 2;
+            ctx.rotate((roll + 180) * Math.PI / 180); // 바늘만 회전
+
+            ctx.beginPath();
+            ctx.moveTo(0, 0);
+            ctx.lineTo(0, 100);
             ctx.stroke();
+            // ctx.closePath();
+            // ctx.fill();
+            ctx.restore();
 
             ctx.restore();
         }
 
-        function appendLog(direction, angle) {
-            const logList = document.getElementById('logList');
-            const time = new Date().toLocaleTimeString();
-            const div = document.createElement('div');
-            div.textContent = `[${time}] ${direction} 기울기 기록 갱신: ${angle.toFixed(1)}°`;
-            logList.prepend(div);
+        function drawGraphs() {
+            const w = graphCanvas.width;
+            const h = graphCanvas.height;
+            graphCtx.clearRect(0, 0, w, h);
+
+            graphCtx.beginPath();
+            graphCtx.strokeStyle = '#0f0';
+            pitchHistory.forEach((val, i) => {
+                const y = h / 2 - val;
+                if (i === 0) graphCtx.moveTo(i, y);
+                else graphCtx.lineTo(i, y);
+            });
+            graphCtx.stroke();
+
+            graphCtx.beginPath();
+            graphCtx.strokeStyle = '#f0f';
+            rollHistory.forEach((val, i) => {
+                const y = h / 2 - val;
+                if (i === 0) graphCtx.moveTo(i, y);
+                else graphCtx.lineTo(i, y);
+            });
+            graphCtx.stroke();
         }
 
-        function handleOrientation(event) {
-            const beta = (event.beta || 0) - offset.beta;
-            const gamma = (event.gamma || 0) - offset.gamma;
-            const alpha = (event.alpha || 0) - offset.alpha;
+        function update(e) {
+            const rawYaw = (e.alpha ?? 0);
+            const rawPitch = (e.beta ?? 0);
+            const rawRoll = (e.gamma ?? 0);
+            filteredYaw = alpha * rawYaw + (1 - alpha) * filteredYaw;
+            filteredPitch = alpha * rawPitch + (1 - alpha) * filteredPitch;
+            filteredRoll = alpha * rawRoll + (1 - alpha) * filteredRoll;
 
-            document.getElementById('gamma').textContent = event.gamma.toFixed(1);
-            document.getElementById('beta').textContent = event.beta.toFixed(1);
-            document.getElementById('alpha').textContent = event.alpha.toFixed(1);
+            const relYaw = ((filteredYaw - yawOffset + 360) % 360).toFixed(1);
+            const relPitch = (filteredPitch - pitchOffset).toFixed(1);
+            const relRoll = (filteredRoll - rollOffset).toFixed(1);
 
-            let totalAngle = Math.sqrt(gamma * gamma + beta * beta); // 수평면 기준의 전체 기울기 크기
-            document.getElementById('totalAngle').textContent = totalAngle.toFixed(1);
+            document.getElementById("yaw").textContent = relYaw;
+            document.getElementById("pitch").textContent = relPitch;
+            document.getElementById("roll").textContent = relRoll;
 
-            const lean = parseFloat(gamma.toFixed(1));
-            // const lean = Math.atan2(gamma, Math.sqrt(beta * beta + alpha * alpha)) * (180 / Math.PI);
+            pitchHistory.push(parseFloat(relPitch));
+            rollHistory.push(parseFloat(relRoll));
+            if (pitchHistory.length > graphCanvas.width) pitchHistory.shift();
+            if (rollHistory.length > graphCanvas.width) rollHistory.shift();
 
-            const now = Date.now();
-            if (Math.abs(lean) > 5) {
-                if (!leanStartTime) leanStartTime = now;
-                const duration = ((now - leanStartTime) / 1000).toFixed(1);
-                document.getElementById('duration').textContent = duration;
-            } else {
-                leanStartTime = null;
-                document.getElementById('duration').textContent = '0.0';
+            const numRoll = parseFloat(relRoll);
+
+            if (numRoll < 0 && Math.abs(numRoll) > maxLeftLean) {
+                maxLeftLean = `${Math.abs(numRoll) < 10 ? "0" : ""}${Math.abs(numRoll).toFixed(1)}`;
+                document.getElementById('maxLeft').textContent = maxLeftLean;
             }
 
-            if (lean < 0 && Math.abs(lean) > maxLeftLean) {
-                maxLeftLean = Math.abs(lean);
-                document.getElementById('maxLeft').textContent = maxLeftLean.toFixed(1);
-                localStorage.setItem('maxLeftLean', maxLeftLean);
-                // appendLog('좌측', maxLeftLean);
-            }
-            if (lean > 0 && lean > maxRightLean) {
-                maxRightLean = lean;
+            if (numRoll > 0 && numRoll > maxRightLean) {
+                maxRightLean = numRoll;
                 document.getElementById('maxRight').textContent = maxRightLean.toFixed(1);
-                localStorage.setItem('maxRightLean', maxRightLean);
-                // appendLog('우측', maxRightLean);
             }
-            drawHUD(totalAngle);
+            drawHUD(parseFloat(relRoll), parseFloat(relPitch), parseFloat(relYaw));
+            drawGraphs();
+
+            if (marker && marker.getLatLng) {
+                const {
+                    lat,
+                    lng
+                } = marker.getLatLng();
+                updateMap(lat, lng, parseFloat(relYaw));
+            }
         }
 
         function updateGPS(position) {
-            const spd = (position.coords.speed || 0) * 3.6;
-            document.getElementById('spd').textContent = spd.toFixed(0);
+            const coords = position.coords;
+            const lat = coords.latitude.toFixed(5);
+            const lon = coords.longitude.toFixed(5);
+            const speed = coords.speed != null ? (coords.speed * 3.6).toFixed(1) : 0;
+            document.getElementById("speed").textContent = speed;
+            updateMap(coords.latitude, coords.longitude, filteredYaw);
         }
 
-        function initSensor() {
-            const storedLeft = localStorage.getItem('maxLeftLean');
-            const storedRight = localStorage.getItem('maxRightLean');
-            if (storedLeft) {
-                maxLeftLean = parseFloat(storedLeft);
-                document.getElementById('maxLeft').textContent = maxLeftLean.toFixed(1);
-            }
-            if (storedRight) {
-                maxRightLean = parseFloat(storedRight);
-                document.getElementById('maxRight').textContent = maxRightLean.toFixed(1);
-            }
-            if (navigator.geolocation) {
-                navigator.geolocation.watchPosition(updateGPS, null, {
-                    enableHighAccuracy: true
-                });
-            }
-            if (typeof DeviceOrientationEvent.requestPermission === 'function') {
-                DeviceOrientationEvent.requestPermission().then(response => {
-                    if (response === 'granted') {
-                        window.addEventListener('deviceorientation', handleOrientation);
-                    } else {
-                        alert('센서 권한이 거부되었습니다.');
+        if (navigator.geolocation) {
+            navigator.geolocation.watchPosition(updateGPS);
+        } else {
+            alert('이 브라우저는 위치 정보를 지원하지 않습니다.');
+        }
+
+        if (typeof DeviceOrientationEvent !== "undefined" && typeof DeviceOrientationEvent.requestPermission === "function") {
+            const btn = document.createElement("button");
+            btn.innerText = "센서 허용";
+            btn.style.position = "absolute";
+            btn.style.top = "50%";
+            btn.style.left = "50%";
+            btn.style.transform = "translate(-50%, -50%)";
+            btn.style.zIndex = "999";
+            btn.onclick = () => {
+                DeviceOrientationEvent.requestPermission().then(resp => {
+                    if (resp === "granted") {
+                        window.addEventListener("deviceorientation", update);
+                        btn.remove();
                     }
                 });
-            } else {
-                window.addEventListener('deviceorientation', handleOrientation);
-            }
-        }
-
-            function setOffsetFromCurrent(callback) {
-            const captureOffset = (event) => {
-                offset.alpha = event.alpha || 0;
-                offset.beta = event.beta || 0;
-                offset.gamma = event.gamma || 0;
-                window.removeEventListener('deviceorientation', captureOffset);
-                if (callback) callback();
             };
-            window.addEventListener('deviceorientation', captureOffset, {
-                once: true
-            });
+            document.body.appendChild(btn);
+        } else {
+            window.addEventListener("deviceorientation", update);
         }
-
-
-        function reinitSensor() {
-            window.removeEventListener('deviceorientation', handleOrientation);
-            setOffsetFromCurrent(() => {
-                window.addEventListener('deviceorientation', handleOrientation);
-            });
-        }
-
-        function resetMax() {
-            maxLeftLean = 0;
-            maxRightLean = 0;
-            leanStartTime = null;
-            localStorage.removeItem('maxLeftLean');
-            localStorage.removeItem('maxRightLean');
-            document.getElementById('maxLeft').textContent = '0.0';
-            document.getElementById('maxRight').textContent = '0.0';
-            document.getElementById('currentLean').textContent = '0.0';
-            document.getElementById('duration').textContent = '0.0';
-            document.getElementById('logList').innerHTML = '';
-            window.removeEventListener('deviceorientation', handleOrientation);
-            setOffsetFromCurrent(() => {
-                window.addEventListener('deviceorientation', handleOrientation);
-            });
-        }
-
-        window.onload = initSensor;
     </script>
 </body>
 
