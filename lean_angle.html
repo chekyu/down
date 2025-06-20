@@ -299,7 +299,7 @@
 
             ctx.beginPath();
             ctx.moveTo(0, 0);
-            ctx.arc(0, 0, 150, -Math.PI / 2, -Math.PI / 2 + (-roll * Math.PI / 180), roll < 0); // false = 시계방향
+            ctx.arc(0, 0, 150, -Math.PI / 2, -Math.PI / 2 + (roll * Math.PI / 180), roll < 0); // false = 시계방향
             ctx.closePath();
             ctx.fillStyle = 'rgba(255, 0, 0, 0.5)';
             ctx.fill();
