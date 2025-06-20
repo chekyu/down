@@ -53,27 +53,27 @@
         }
 
         #topNavi {
-            color: #fff;  
+            position: absolute;
+            color: #fff;
             font-size: 2rem;
             width: 100%;
             padding: 20px;
-               #speedCenter {
-            position: absolute;
-            width: 100%;
+            display: flex;
+        }
+
+        #speedCenter {
+            flex: 3;
             text-align: center;
         }
 
         #leanMaxLeft {
-            position: absolute;
-            width: 100%;
-            text-align: left;
+            flex: 1;
+            text-align: center;
         }
 
         #leanMaxRight {
-            position: absolute;
-            width: 100%;
-            text-align: right;
-        }
+            flex: 1;
+            text-align: center;
         }
 
         #controls {
@@ -97,7 +97,8 @@
             width: 100%;
             padding: 10px;
             background: rgba(0, 0, 0, 0.6);
-            text-align: center;  /* ← 이것 추가 */
+            text-align: center;
+            /* ← 이것 추가 */
         }
 
         button {
@@ -126,9 +127,9 @@
     <canvas id="hud"></canvas>
     <canvas id="graphCanvas"></canvas>
     <div id="topNavi">
-        <div id="speedCenter"><span id="speed">SPEED</span></div>
-        <div id="leanMaxLeft"><span id="maxLeft">LEFT</span>°</div>
-        <div id="leanMaxRight"><span id="maxRight">RIGHT</span>°</div>
+        <div id="leanMaxLeft"><span id="maxLeft">1</span>°</div>
+        <div id="speedCenter"><span id="speed">00</span></div>
+        <div id="leanMaxRight"><span id="maxRight">1</span>°</div>
     </div>
     <div id="status">
         <div hidden>Yaw: <span id="yaw">0</span>°</div>
@@ -243,7 +244,7 @@
                     backCtx.font = "12px sans-serif";
                     backCtx.fillStyle = "#fff";
                     backCtx.textAlign = "center";
-                     if (Math.abs(deg) > 80) {
+                    if (Math.abs(deg) > 80) {
                         backCtx.fillStyle = "#d5d8dc";
                     } else if (Math.abs(deg) > 45) {
                         backCtx.fillStyle = "#ff0000";
@@ -298,7 +299,7 @@
             // ctx.moveTo(Math.cos(angleR) * 65, (Math.sin(angleR) * 65) + 45);
             // ctx.lineTo(Math.cos(angleR) * 65, (Math.sin(angleR) * 65) - 45);
             // ctx.stroke();
-            
+
             ctx.restore(); // 회전 적용 안 함
 
             // 회전하는 바늘만 따로 회전
@@ -306,7 +307,7 @@
             ctx.strokeStyle = '#ffff00';
             ctx.lineWidth = 2;
             ctx.rotate((roll + 180) * Math.PI / 180); // 바늘만 회전
-            
+
             ctx.beginPath();
             ctx.moveTo(0, 0);
             ctx.lineTo(0, 100);
