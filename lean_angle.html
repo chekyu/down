@@ -189,9 +189,9 @@
 
         function drawBack() {
             canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight / 2;
+            canvas.height = window.innerWidth;
             backCanvas.width = window.innerWidth;
-            backCanvas.height = window.innerHeight / 2;
+            backCanvas.height = window.innerWidth;
 
             const centerX = backCanvas.width / 2;
             const centerY = backCanvas.height / 2;
@@ -315,6 +315,13 @@
             const w = graphCanvas.width;
             const h = graphCanvas.height;
             graphCtx.clearRect(0, 0, w, h);
+
+            backCtx.strokeStyle = '#0ff';
+            backCtx.lineWidth = 1
+            backCtx.beginPath();
+            backCtx.moveTo(-100, h / 2);
+            backCtx.lineTo(100, h / 2);
+            backCtx.stroke();
 
             graphCtx.beginPath();
             graphCtx.strokeStyle = '#0f0';
