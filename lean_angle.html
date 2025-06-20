@@ -55,7 +55,7 @@
             color: #fff;
             font-size: 2rem;
             width: 100%;
-            padding: 20px;
+            padding-top: 20px;
             display: flex;
         }
 
@@ -363,7 +363,7 @@
             }
 
             if (numRoll > 0 && numRoll > maxRightLean) {
-                maxRightLean = `${Math.abs(numRoll) < 10 ? "0" : ""}${Math.abs(numRoll).toFixed(0)}`;
+                maxRightLean = = `${Math.abs(numRoll) < 10 ? "0" : ""}${Math.abs(numRoll).toFixed(0)}`;
                 document.getElementById('maxRight').textContent = maxRightLean;
             }
 
@@ -383,7 +383,7 @@
             const coords = position.coords;
             const lat = coords.latitude.toFixed(5);
             const lon = coords.longitude.toFixed(5);
-            const speed = coords.speed != null ? (coords.speed * 3.6).toFixed(0) : 0;
+            const speed = coords.speed != null ? (coords.speed * 3.6).toFixed(1) : 0;
             document.getElementById("speed").textContent = speed;
             updateMap(coords.latitude, coords.longitude, filteredYaw);
         }
