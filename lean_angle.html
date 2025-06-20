@@ -76,7 +76,7 @@
 
         #graphCanvas {
             position: absolute;
-            top: 20px;
+            top: 60px;
             left: 50%;
             transform: translateX(-50%);
             background: rgba(0, 0, 0, 0.1);
@@ -152,8 +152,8 @@
             maxRightLean = 0;
 
         const alpha = 0.1;
-        const pitchHistory = [0,0,0,0,0],
-            rollHistory = [0,0,0,0,0];
+        const pitchHistory = [],
+            rollHistory = [];
 
         let map, marker, markerIcon;
 
@@ -320,7 +320,7 @@
             graphCtx.beginPath();
             graphCtx.strokeStyle = '#0f0';
             pitchHistory.forEach((val, i) => {
-                const y = h / 4 - val;
+                const y = (h / 2 - val) / 2;
                 if (i === 0) graphCtx.moveTo(i, y);
                 else graphCtx.lineTo(i, y);
             });
@@ -329,7 +329,7 @@
             graphCtx.beginPath();
             graphCtx.strokeStyle = '#f0f';
             rollHistory.forEach((val, i) => {
-                const y = h / 4 - val;
+                const y = (h / 2 - val) / 2;
                 if (i === 0) graphCtx.moveTo(i, y);
                 else graphCtx.lineTo(i, y);
             });
