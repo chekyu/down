@@ -288,8 +288,8 @@
             ctx.restore(); // 회전 적용 안 함
             // 회전하는 바늘만 따로 회전
             ctx.save();
-            ctx.strokeStyle = '#ffff00';
             ctx.lineWidth = 2;
+            ctx.strokeStyle = 'rgba(255, 255, 0, 0.5)';
             ctx.rotate((roll + 180) * Math.PI / 180); // 바늘만 회전
             ctx.beginPath();
             ctx.moveTo(0, 0);
@@ -298,10 +298,10 @@
             ctx.restore();
 
             ctx.beginPath();
+            ctx.fillStyle = 'rgba(255, 0, 0, 0.5)';
             ctx.moveTo(0, 0);
             ctx.arc(0, 0, 150, -Math.PI / 2, -Math.PI / 2 + (roll * Math.PI / 180), roll < 0); // false = 시계방향
             ctx.closePath();
-            ctx.fillStyle = 'rgba(255, 0, 0, 0.5)';
             ctx.fill();
 
             ctx.restore();
