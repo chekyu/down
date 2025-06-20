@@ -381,10 +381,36 @@
 
         function updateGPS(position) {
             const coords = position.coords;
-            const lat = coords.latitude.toFixed(5);
-            const lon = coords.longitude.toFixed(5);
-            const speed = coords.speed != null ? (coords.speed * 3.6).toFixed(1) : 0;
-            document.getElementById("speed").textContent = speed;
+            const now = position.timestamp;
+
+            let speed = 0;
+
+            if (lastPosition && lastTimestamp) {
+                const dx = coords.longitude - lastPosition.longitude;
+                const dy = coords.latitude - lastPosition.latitude;
+
+                const R = 6371e3; // 지구 반지름 (미터)
+                const φ1 = lastPosition.latitude * Math.PI / 180;
+                const φ2 = coords.latitude * Math.PI / 180;
+                const Δφ = (coords.latitude - lastPosition.latitude) * Math.PI / 180;
+                const Δλ = (coords.longitude - lastPosition.longitude) * Math.PI / 180;
+
+                const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+                    Math.cos(φ1) * Math.cos(φ2) *
+                    Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+                const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+                const distance = R * c; // meters
+                const timeDiff = (now - lastTimestamp) / 1000; // seconds
+
+                speed = (distance / timeDiff) * 3.6; // km/h
+            }
+
+            document.getElementById("speed").textContent = speed.toFixed(1);
+
+            lastPosition = coords;
+            lastTimestamp = now;
+
             updateMap(coords.latitude, coords.longitude, filteredYaw);
         }
 
