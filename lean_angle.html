@@ -297,14 +297,11 @@
             ctx.stroke();
             ctx.restore();
 
-            // 중심점
-            ctx.fillStyle = '#ff000080';
             ctx.beginPath();
-            // ctx.arc(0, 0, 150, (roll + 180) * Math.PI / 180, 0);
-            const cx = 0, cy = 0, radius = 150;
-            ctx.moveTo(0, 0); // 중심점에서 시작
-            ctx.arc(cx, cy, radius, (roll + 180) * Math.PI / 180, 0); // 90도 (¼ 원)
-            ctx.closePath(); // 원호 끝 → 중심점으로 자동 연결
+            ctx.moveTo(0, 0);
+            ctx.arc(0, 0, 150, -Math.PI / 2, -Math.PI / 2 + (-roll * Math.PI / 180), roll < 0); // false = 시계방향
+            ctx.closePath();
+            ctx.fillStyle = 'rgba(255, 0, 0, 0.5)';
             ctx.fill();
 
             ctx.restore();
