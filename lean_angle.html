@@ -316,7 +316,7 @@
             const w = graphCanvas.width;
             const h = graphCanvas.height;
             graphCtx.clearRect(0, 0, w, h);
-            
+
             graphCtx.beginPath();
             graphCtx.strokeStyle = '#0f0';
             pitchHistory.forEach((val, i) => {
@@ -382,6 +382,15 @@
         }
 
         function updateGPS(position) {
+            const coords = position.coords;
+            const lat = coords.latitude.toFixed(5);
+            const lon = coords.longitude.toFixed(5);
+            const speed = coords.speed != null ? (coords.speed * 3.6).toFixed(1) : 0;
+            document.getElementById("speed").textContent = speed;
+            document.getElementById("coords").textContent = `${lat}, ${lon}`;
+        }
+
+        function updateGPSV2(position) {
             const coords = position.coords;
             const now = position.timestamp;
 
