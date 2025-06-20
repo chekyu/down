@@ -316,12 +316,12 @@
             const h = graphCanvas.height;
             graphCtx.clearRect(0, 0, w, h);
 
-            backCtx.strokeStyle = '#0ff';
-            backCtx.lineWidth = 1
-            backCtx.beginPath();
-            backCtx.moveTo(-100, h / 2);
-            backCtx.lineTo(100, h / 2);
-            backCtx.stroke();
+            graphCtx.strokeStyle = '#0ff';
+            graphCtx.lineWidth = 1
+            graphCtx.beginPath();
+            graphCtx.moveTo(0, h / 2);
+            graphCtx.lineTo(w, h / 2);
+            graphCtx.stroke();
 
             graphCtx.beginPath();
             graphCtx.strokeStyle = '#0f0';
