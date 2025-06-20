@@ -103,28 +103,40 @@
     </div>
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
     <script>
-        const canvas = document.getElementById('hud');
+         const canvas = document.getElementById('hud');
         const ctx = canvas.getContext('2d');
         const graphCanvas = document.getElementById('graphCanvas');
         const graphCtx = graphCanvas.getContext('2d');
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
+        const backCanvas = document.getElementById('backHud');
+        const backCtx = backCanvas.getContext('2d');
 
-        let yawOffset = 0, pitchOffset = 0, rollOffset = 0;
-        let filteredYaw = 0, filteredPitch = 0, filteredRoll = 0;
+        let yawOffset = 0,
+            pitchOffset = 0,
+            rollOffset = 0;
+        let filteredYaw = 0,
+            filteredPitch = 0,
+            filteredRoll = 0;
+        let maxLeftLean = 0,
+            maxRightLean = 0;
+
         const alpha = 0.1;
-        const pitchHistory = [], rollHistory = [];
+        const pitchHistory = [],
+            rollHistory = [];
 
-        let map, marker;
+        let map, marker, markerIcon;
+
+        drawBack()
+        drawHUD(0, 0, 0)
+        drawGraphs()
 
         function initMap(lat, lon) {
             map = L.map('map', {
                 zoomControl: false // 확대/축소 버튼 제거
-            }).setView([lat, lon], 17);
-            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+            }).setView([lat, lon], 15);
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}.png', {
                 attribution: '&copy; OpenStreetMap contributors & CartoDB',
                 subdomains: 'abcd',
-                maxZoom: 19
+                maxZoom: 15
             }).addTo(map);
         }
 
@@ -137,9 +149,80 @@
         }
 
         function resetReference() {
+            maxLeftLean = 0;
+            maxRightLean = 0;
             yawOffset = filteredYaw;
             pitchOffset = filteredPitch;
             rollOffset = filteredRoll;
+        }
+
+        function drawBack() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            backCanvas.width = window.innerWidth;
+            backCanvas.height = window.innerHeight;
+
+            const centerX = backCanvas.width / 2;
+            const centerY = backCanvas.height / 2;
+            const radius = 150;
+
+            backCtx.translate(centerX, centerY);
+
+            // 위치 중앙
+            backCtx.strokeStyle = '#0ff';
+            backCtx.lineWidth = 1
+            backCtx.beginPath();
+            backCtx.moveTo(-100, 0);
+            backCtx.lineTo(100, 0);
+            backCtx.stroke();
+
+            // 눈금 그리기 (-90 ~ 90도)
+            for (let deg = -175; deg <= 180; deg += 5) {
+                const rad = (deg) * Math.PI / 180;
+                const outerX = 0 + radius * Math.sin(rad); // sin으로 수평
+                const outerY = 0 - radius * Math.cos(rad); // cos으로 수직
+                const len = deg % 10 === 0 ? 15 : deg % 5 === 0 ? 10 : 5;
+                const innerX = 0 + (radius - len) * Math.sin(rad);
+                const innerY = 0 - (radius - len) * Math.cos(rad);
+
+                backCtx.beginPath();
+                if (Math.abs(deg) > 80) {
+                    backCtx.strokeStyle = "#d5d8dc";
+                } else if (Math.abs(deg) > 45) {
+                    backCtx.strokeStyle = "#ff0000";
+                } else if (deg != 0) {
+                    backCtx.strokeStyle = "#0000ff";
+                }
+                backCtx.moveTo(outerX, outerY);
+                backCtx.lineTo(innerX, innerY);
+                backCtx.lineWidth = deg % 10 === 0 ? 1.5 : 1;
+                backCtx.stroke();
+
+                // 숫자 표시
+                if (deg % 10 === 0) {
+                    const textX = 0 + (radius - 25) * Math.sin(rad);
+                    const textY = 0 - (radius - 25) * Math.cos(rad);
+                    backCtx.font = "12px sans-serif";
+                    backCtx.fillStyle = "#fff";
+                    backCtx.textAlign = "center";
+                    if (Math.abs(deg) > 80) {
+                        backCtx.fillStyle = "#d5d8dc";
+                    } else if (Math.abs(deg) > 45) {
+                        backCtx.fillStyle = "#ff0000";
+                    } else if (deg != 0) {
+                        backCtx.fillStyle = "#0000ff";
+                    }
+                    backCtx.fillText(Math.abs(deg).toString(), textX, textY + 4);
+                }
+            }
+
+            backCtx.strokeStyle = '#fff';
+            backCtx.lineWidth = 2
+            backCtx.beginPath();
+            backCtx.arc(0, 0, 150, 0, 2 * Math.PI);
+            // backCtx.arc(0, 0, radius, Math.PI, 0, false); // 180도
+            backCtx.stroke();
+
         }
 
         function drawHUD(roll, pitch, yaw) {
@@ -149,42 +232,50 @@
             ctx.save();
             ctx.translate(w / 2, h / 2);
 
+            // 중심점
+            ctx.strokeStyle = '#ff0';
             ctx.beginPath();
-            ctx.strokeStyle = '#0ff';
-            ctx.lineWidth = 3;
-            ctx.arc(0, 0, 120, -Math.PI / 2 - roll * Math.PI / 180, -Math.PI / 2);
-            ctx.stroke();
+            ctx.arc(0, 0, 3, 0, 2 * Math.PI);
+            ctx.fill();
 
-            ctx.strokeStyle = '#0f0';
-            for (let i = -90; i <= 90; i += 10) {
-                const y = (pitch - i) * 2;
+            // 눈금선 (Pitch 기준, 회전 없음)
+            ctx.save();
+            ctx.lineWidth = 1;
+            for (let x = -50; x <= 50; x += 10) {
+                const y = (pitch - x) * 1;
+                ctx.strokeStyle = x > 0 ? "#f5b7b1" : "#aed6f1";
                 ctx.beginPath();
-                ctx.moveTo(-40, y);
-                ctx.lineTo(40, y);
+                ctx.moveTo(-x, y);
+                ctx.lineTo(x, y);
                 ctx.stroke();
             }
 
-            ctx.strokeStyle = '#fff';
-            ctx.beginPath();
-            ctx.moveTo(-15, 0);
-            ctx.lineTo(15, 0);
-            ctx.moveTo(0, -15);
-            ctx.lineTo(0, 15);
-            ctx.stroke();
+            // ctx.rotate(-yaw * Math.PI / 180);
+            // ctx.strokeStyle = '#28b463';
+            // const angleL = 0 * Math.PI / 2;
+            // const angleR = 2 * Math.PI / 2;
+            // ctx.beginPath();
+            // ctx.moveTo(Math.cos(angleL) * 65, (Math.sin(angleL) * 65) + 45);
+            // ctx.lineTo(Math.cos(angleL) * 65, (Math.sin(angleL) * 65) - 45);
+            // ctx.moveTo(Math.cos(angleR) * 65, (Math.sin(angleR) * 65) + 45);
+            // ctx.lineTo(Math.cos(angleR) * 65, (Math.sin(angleR) * 65) - 45);
+            // ctx.stroke();
 
-            ctx.rotate(-yaw * Math.PI / 180);
-            ctx.strokeStyle = '#ff0';
+            ctx.restore(); // 회전 적용 안 함
+
+            // 회전하는 바늘만 따로 회전
+            ctx.save();
+            ctx.strokeStyle = '#ffff00';
+            ctx.lineWidth = 2;
+            ctx.rotate((roll + 180) * Math.PI / 180); // 바늘만 회전
+
             ctx.beginPath();
-            ctx.arc(0, 0, 150, 0, 2 * Math.PI);
+            ctx.moveTo(0, 0);
+            ctx.lineTo(0, 100);
             ctx.stroke();
-            ['N', 'E', 'S', 'W'].forEach((dir, i) => {
-                const angle = i * Math.PI / 2;
-                const x = Math.cos(angle) * 150;
-                const y = Math.sin(angle) * 150;
-                ctx.fillStyle = '#ff0';
-                ctx.font = '20px monospace';
-                ctx.fillText(dir, x - 10, y + 5);
-            });
+            // ctx.closePath();
+            // ctx.fill();
+            ctx.restore();
 
             ctx.restore();
         }
@@ -197,7 +288,7 @@
             graphCtx.beginPath();
             graphCtx.strokeStyle = '#0f0';
             pitchHistory.forEach((val, i) => {
-                const y = h / 2 - val;
+                const y = h / 2 - (val * 0.8);
                 if (i === 0) graphCtx.moveTo(i, y);
                 else graphCtx.lineTo(i, y);
             });
@@ -206,7 +297,7 @@
             graphCtx.beginPath();
             graphCtx.strokeStyle = '#f0f';
             rollHistory.forEach((val, i) => {
-                const y = h / 2 - val;
+                const y = h / 2 - (val * 0.8);
                 if (i === 0) graphCtx.moveTo(i, y);
                 else graphCtx.lineTo(i, y);
             });
@@ -234,6 +325,18 @@
             if (pitchHistory.length > graphCanvas.width) pitchHistory.shift();
             if (rollHistory.length > graphCanvas.width) rollHistory.shift();
 
+            const numRoll = parseFloat(relRoll);
+
+            if (numRoll < 0 && Math.abs(numRoll) > maxLeftLean) {
+                maxLeftLean = `${Math.abs(numRoll) < 10 ? "0" : ""}${Math.abs(numRoll).toFixed(0)}`;
+                document.getElementById('maxLeft').textContent = maxLeftLean;
+            }
+
+            if (numRoll > 0 && numRoll > maxRightLean) {
+                maxRightLean = `${Math.abs(numRoll) < 10 ? "0" : ""}${Math.abs(numRoll).toFixed(0)}`;
+                document.getElementById('maxRight').textContent = maxRightLean;
+            }
+
             drawHUD(parseFloat(relRoll), parseFloat(relPitch), parseFloat(relYaw));
             drawGraphs();
 
@@ -252,8 +355,37 @@
             const lon = coords.longitude.toFixed(5);
             const speed = coords.speed != null ? (coords.speed * 3.6).toFixed(1) : 0;
             document.getElementById("speed").textContent = speed;
-            updateMap(coords.latitude, coords.longitude, filteredYaw);
         }
+
+        /*function updateGPSV2(position) {
+            const coords = position.coords;
+            const now = position.timestamp;
+            let speed = 0;
+            if (lastPosition && lastTimestamp) {
+                const dx = coords.longitude - lastPosition.longitude;
+                const dy = coords.latitude - lastPosition.latitude;
+
+                const R = 6371e3; // 지구 반지름 (미터)
+                const φ1 = lastPosition.latitude * Math.PI / 180;
+                const φ2 = coords.latitude * Math.PI / 180;
+                const Δφ = (coords.latitude - lastPosition.latitude) * Math.PI / 180;
+                const Δλ = (coords.longitude - lastPosition.longitude) * Math.PI / 180;
+
+                const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+                    Math.cos(φ1) * Math.cos(φ2) *
+                    Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+                const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+                const distance = R * c; // meters
+                const timeDiff = (now - lastTimestamp) / 1000; // seconds
+
+                speed = (distance / timeDiff) * 3.6; // km/h
+            }
+            document.getElementById("speed").textContent = speed.toFixed(1);
+            lastPosition = coords;
+            lastTimestamp = now;
+            updateMap(coords.latitude, coords.longitude, filteredYaw);
+        }*/
 
         if (navigator.geolocation) {
             navigator.geolocation.watchPosition(updateGPS);
