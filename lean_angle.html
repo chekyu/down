@@ -113,20 +113,20 @@
 
 <body>
     <div id="map"></div>
-    <canvas id="backHud"></canvas>
-    <canvas id="hud"></canvas>
-    <canvas id="graphCanvas"></canvas>
-    <div id="topNavi">
+    <canvas id="backHud" hidden></canvas>
+    <canvas id="hud" hidden></canvas>
+    <canvas id="graphCanvas" hidden></canvas>
+    <div id="topNavi" hidden>
         <div id="leanMaxLeft"><span id="maxLeft">1</span>°</div>
         <div id="speedCenter"><span id="speed">00</span></div>
         <div id="leanMaxRight"><span id="maxRight">1</span>°</div>
     </div>
-    <div id="status">
+    <div id="status" hidden>
         <div hidden>Yaw: <span id="yaw">0</span>°</div>
         <div hidden>Pitch: <span id="pitch">0</span>°</div>
         <div hidden>Roll: <span id="roll">0</span>°</div>
     </div>
-    <div id="navigator">
+    <div id="navigator" hidden>
         <button onclick="resetReference()">RESET</button>
     </div>
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
