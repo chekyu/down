@@ -27,6 +27,10 @@
       <li><a href=""></a></li>
     </ul>
   </div>
+  <div>
+    <input type="file" id="imageInput" accept="image/*">
+    <img id="preview" src="" alt="미리보기" style="display:none;">
+  </div>
 <script>
   const owner = "chekyu";
   const repo  = "down";
@@ -80,6 +84,17 @@
     })
     .catch(err => {
       document.getElementById("status").textContent = err.message;
+    });
+
+    document.getElementById('imageInput').addEventListener('change', function(e) {
+      const file = e.target.files[0];
+      const reader = new FileReader();
+      reader.onload = function(event) {
+        const preview = document.getElementById('preview');
+        preview.src = event.target.result;
+        preview.style.display = 'block';
+      };
+      reader.readAsDataURL(file);
     });
 </script>
 </body>
